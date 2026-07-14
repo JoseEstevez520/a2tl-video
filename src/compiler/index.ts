@@ -23,6 +23,27 @@ import type {
   TraceLogComponent,
   VizComponent,
   BylineComponent,
+  CodeRevealComponent,
+  ChartComponent,
+  TerminalComponent,
+  TimelineComponent,
+  ProgressComponent,
+  CountUpComponent,
+  SplitScreenComponent,
+  IconGridComponent,
+  ParticlesComponent,
+  GlowComponent,
+  QuoteComponent,
+  ArchitectureComponent,
+  ZoomRevealComponent,
+  MorphComponent,
+  KineticTextComponent,
+  CodeDiffComponent,
+  FileTreeWalkComponent,
+  TypingCodeComponent,
+  AnimatedCounterComponent,
+  ComparisonSliderComponent,
+  SceneStackComponent,
 } from "../parser/types";
 import { indent, propsToJSX, escapeString, serializeValue } from "./codegen";
 
@@ -102,6 +123,27 @@ const COMPONENT_IMPORTS: Record<string, string> = {
   ProtocolCompare: "ProtocolCompare",
   Byline: "Byline",
   GridCanvas: "GridCanvas",
+  CodeReveal: "CodeReveal",
+  AnimatedChart: "AnimatedChart",
+  TerminalReplay: "TerminalReplay",
+  Timeline: "Timeline",
+  ProgressBar: "ProgressBar",
+  CountUp: "CountUp",
+  SplitScreen: "SplitScreen",
+  IconGrid: "IconGrid",
+  ParticleField: "ParticleField",
+  GlowOrb: "GlowOrb",
+  QuoteBlock: "QuoteBlock",
+  ArchitectureDiagram: "ArchitectureDiagram",
+  ZoomReveal: "ZoomReveal",
+  MorphTransition: "MorphTransition",
+  KineticText: "KineticText",
+  CodeDiff: "CodeDiff",
+  FileTreeWalk: "FileTreeWalk",
+  TypingCode: "TypingCode",
+  AnimatedCounter: "AnimatedCounter",
+  ComparisonSlider: "ComparisonSlider",
+  SceneStack: "SceneStack",
 };
 
 function collectUsedComponents(spec: VDSLSpec): Set<string> {
@@ -155,6 +197,69 @@ function collectUsedComponents(spec: VDSLSpec): Set<string> {
         }
         case "byline":
           used.add("Byline");
+          break;
+        case "code-reveal":
+          used.add("CodeReveal");
+          break;
+        case "chart":
+          used.add("AnimatedChart");
+          break;
+        case "terminal":
+          used.add("TerminalReplay");
+          break;
+        case "timeline":
+          used.add("Timeline");
+          break;
+        case "progress":
+          used.add("ProgressBar");
+          break;
+        case "count-up":
+          used.add("CountUp");
+          break;
+        case "split-screen":
+          used.add("SplitScreen");
+          break;
+        case "icon-grid":
+          used.add("IconGrid");
+          break;
+        case "particles":
+          used.add("ParticleField");
+          break;
+        case "glow":
+          used.add("GlowOrb");
+          break;
+        case "quote":
+          used.add("QuoteBlock");
+          break;
+        case "architecture":
+          used.add("ArchitectureDiagram");
+          break;
+        case "zoom-reveal":
+          used.add("ZoomReveal");
+          break;
+        case "morph":
+          used.add("MorphTransition");
+          break;
+        case "kinetic-text":
+          used.add("KineticText");
+          break;
+        case "code-diff":
+          used.add("CodeDiff");
+          break;
+        case "file-tree-walk":
+          used.add("FileTreeWalk");
+          break;
+        case "typing-code":
+          used.add("TypingCode");
+          break;
+        case "animated-counter":
+          used.add("AnimatedCounter");
+          break;
+        case "comparison-slider":
+          used.add("ComparisonSlider");
+          break;
+        case "scene-stack":
+          used.add("SceneStack");
           break;
       }
     }
@@ -258,18 +363,39 @@ function computeSceneStartFrame(spec: VDSLSpec, index: number): number {
 
 function buildComponent(comp: Component, sceneStartSec: number): string {
   switch (comp.type) {
-    case "text":        return buildText(comp as TextComponent);
-    case "text-cycle":  return buildTextCycle(comp as TextCycleComponent);
-    case "label":       return buildLabel(comp as LabelComponent);
-    case "triptych":    return buildTriptych(comp as TriptychComponent);
-    case "step-sequence": return buildStepSequence(comp as StepSequenceComponent);
-    case "comparison":  return buildComparison(comp as ComparisonComponent);
-    case "card":        return buildCard(comp as CardComponent);
-    case "code":        return buildCode(comp as CodeComponent);
-    case "trace-log":   return buildTraceLog(comp as TraceLogComponent);
-    case "viz":         return buildViz(comp as VizComponent);
-    case "byline":      return buildByline(comp as BylineComponent);
-    default:            return `{/* unknown component type: ${(comp as Component).type} */}`;
+    case "text":              return buildText(comp as TextComponent);
+    case "text-cycle":        return buildTextCycle(comp as TextCycleComponent);
+    case "label":             return buildLabel(comp as LabelComponent);
+    case "triptych":          return buildTriptych(comp as TriptychComponent);
+    case "step-sequence":     return buildStepSequence(comp as StepSequenceComponent);
+    case "comparison":        return buildComparison(comp as ComparisonComponent);
+    case "card":              return buildCard(comp as CardComponent);
+    case "code":              return buildCode(comp as CodeComponent);
+    case "trace-log":         return buildTraceLog(comp as TraceLogComponent);
+    case "viz":               return buildViz(comp as VizComponent);
+    case "byline":            return buildByline(comp as BylineComponent);
+    case "code-reveal":       return buildCodeReveal(comp as CodeRevealComponent);
+    case "chart":             return buildChart(comp as ChartComponent);
+    case "terminal":          return buildTerminal(comp as TerminalComponent);
+    case "timeline":          return buildTimeline(comp as TimelineComponent);
+    case "progress":          return buildProgress(comp as ProgressComponent);
+    case "count-up":          return buildCountUp(comp as CountUpComponent);
+    case "split-screen":      return buildSplitScreen(comp as SplitScreenComponent);
+    case "icon-grid":         return buildIconGrid(comp as IconGridComponent);
+    case "particles":         return buildParticles(comp as ParticlesComponent);
+    case "glow":              return buildGlow(comp as GlowComponent);
+    case "quote":             return buildQuote(comp as QuoteComponent);
+    case "architecture":      return buildArchitecture(comp as ArchitectureComponent);
+    case "zoom-reveal":       return buildZoomReveal(comp as ZoomRevealComponent);
+    case "morph":             return buildMorph(comp as MorphComponent);
+    case "kinetic-text":      return buildKineticText(comp as KineticTextComponent);
+    case "code-diff":         return buildCodeDiff(comp as CodeDiffComponent);
+    case "file-tree-walk":    return buildFileTreeWalk(comp as FileTreeWalkComponent);
+    case "typing-code":       return buildTypingCode(comp as TypingCodeComponent);
+    case "animated-counter":  return buildAnimatedCounter(comp as AnimatedCounterComponent);
+    case "comparison-slider": return buildComparisonSlider(comp as ComparisonSliderComponent);
+    case "scene-stack":       return buildSceneStack(comp as SceneStackComponent);
+    default:                  return `{/* unknown component type: ${(comp as Component).type} */}`;
   }
 }
 
@@ -556,6 +682,471 @@ function buildByline(comp: BylineComponent): string {
     `<Byline`,
     `  text="${escapeString(comp.text)}"`,
     `  position="${comp.position}"`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`,
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// CodeReveal
+// ---------------------------------------------------------------------------
+
+function buildCodeReveal(comp: CodeRevealComponent): string {
+  const lines: string[] = [
+    `<CodeReveal`,
+    `  code={"${escapeString(comp.code)}"}`,
+  ];
+  if (comp.language) lines.push(`  language="${escapeString(comp.language)}"`);
+  if (comp.title) lines.push(`  title="${escapeString(comp.title)}"`);
+  if (comp.highlightLines && comp.highlightLines.length > 0) {
+    lines.push(`  highlightLines={[${comp.highlightLines.join(", ")}]}`);
+  }
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// AnimatedChart
+// ---------------------------------------------------------------------------
+
+function buildChart(comp: ChartComponent): string {
+  const dataArr = comp.data.map((d) => {
+    const parts = [`label: "${escapeString(d.label)}"`, `value: ${d.value}`];
+    if (d.color) parts.push(`color: "${escapeString(d.color)}"`);
+    return `{ ${parts.join(", ")} }`;
+  });
+
+  const lines: string[] = [
+    `<AnimatedChart`,
+    `  type="${escapeString(comp.chartType)}"`,
+  ];
+  if (comp.title) lines.push(`  title="${escapeString(comp.title)}"`);
+  lines.push(
+    `  data={[`,
+    ...dataArr.map((d) => `    ${d},`),
+    `  ]}`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// TerminalReplay
+// ---------------------------------------------------------------------------
+
+function buildTerminal(comp: TerminalComponent): string {
+  const linesArr = comp.lines.map(
+    (l) => `{ text: "${escapeString(l.text)}", isCommand: ${l.isCommand} }`
+  );
+
+  const lines: string[] = [`<TerminalReplay`];
+  if (comp.title) lines.push(`  title="${escapeString(comp.title)}"`);
+  lines.push(
+    `  lines={[`,
+    ...linesArr.map((l) => `    ${l},`),
+    `  ]}`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Timeline
+// ---------------------------------------------------------------------------
+
+function buildTimeline(comp: TimelineComponent): string {
+  const eventsArr = comp.events.map((e) => {
+    const parts = [`label: "${escapeString(e.label)}"`];
+    if (e.description) parts.push(`description: "${escapeString(e.description)}"`);
+    if (e.color) parts.push(`color: "${escapeString(e.color)}"`);
+    return `{ ${parts.join(", ")} }`;
+  });
+
+  const lines: string[] = [`<Timeline`];
+  if (comp.direction) lines.push(`  direction="${comp.direction}"`);
+  lines.push(
+    `  events={[`,
+    ...eventsArr.map((e) => `    ${e},`),
+    `  ]}`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// ProgressBar
+// ---------------------------------------------------------------------------
+
+function buildProgress(comp: ProgressComponent): string {
+  const barsArr = comp.bars.map((b) => {
+    const parts = [`label: "${escapeString(b.label)}"`, `value: ${b.value}`];
+    if (b.color) parts.push(`color: "${escapeString(b.color)}"`);
+    return `{ ${parts.join(", ")} }`;
+  });
+
+  return [
+    `<ProgressBar`,
+    `  bars={[`,
+    ...barsArr.map((b) => `    ${b},`),
+    `  ]}`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`,
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// CountUp
+// ---------------------------------------------------------------------------
+
+function buildCountUp(comp: CountUpComponent): string {
+  const lines: string[] = [
+    `<CountUp`,
+    `  value={${comp.value}}`,
+  ];
+  if (comp.prefix) lines.push(`  prefix="${escapeString(comp.prefix)}"`);
+  if (comp.suffix) lines.push(`  suffix="${escapeString(comp.suffix)}"`);
+  if (comp.label) lines.push(`  label="${escapeString(comp.label)}"`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// SplitScreen
+// ---------------------------------------------------------------------------
+
+function buildSplitScreen(comp: SplitScreenComponent): string {
+  const lines: string[] = [
+    `<SplitScreen`,
+    `  left={{ title: "${escapeString(comp.left.title)}", content: "${escapeString(comp.left.content)}" }}`,
+    `  right={{ title: "${escapeString(comp.right.title)}", content: "${escapeString(comp.right.content)}" }}`,
+  ];
+  if (comp.animation) lines.push(`  animation="${escapeString(comp.animation)}"`);
+  if (comp.divider) lines.push(`  divider="${escapeString(comp.divider)}"`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// IconGrid
+// ---------------------------------------------------------------------------
+
+function buildIconGrid(comp: IconGridComponent): string {
+  const itemsArr = comp.items.map((item) => {
+    const parts = [`icon: "${escapeString(item.icon)}"`, `label: "${escapeString(item.label)}"`];
+    if (item.description) parts.push(`description: "${escapeString(item.description)}"`);
+    return `{ ${parts.join(", ")} }`;
+  });
+
+  return [
+    `<IconGrid`,
+    `  columns={${comp.columns}}`,
+    `  items={[`,
+    ...itemsArr.map((i) => `    ${i},`),
+    `  ]}`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`,
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// ParticleField
+// ---------------------------------------------------------------------------
+
+function buildParticles(comp: ParticlesComponent): string {
+  const lines: string[] = [`<ParticleField`];
+  if (comp.count !== undefined) lines.push(`  count={${comp.count}}`);
+  if (comp.pattern) lines.push(`  pattern="${escapeString(comp.pattern)}"`);
+  if (comp.opacity !== undefined) lines.push(`  opacity={${comp.opacity}}`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// GlowOrb
+// ---------------------------------------------------------------------------
+
+function buildGlow(comp: GlowComponent): string {
+  const lines: string[] = [`<GlowOrb`];
+  if (comp.x !== undefined) lines.push(`  x={${comp.x}}`);
+  if (comp.y !== undefined) lines.push(`  y={${comp.y}}`);
+  if (comp.size !== undefined) lines.push(`  size={${comp.size}}`);
+  if (comp.color) lines.push(`  color="${escapeString(comp.color)}"`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// QuoteBlock
+// ---------------------------------------------------------------------------
+
+function buildQuote(comp: QuoteComponent): string {
+  const lines: string[] = [
+    `<QuoteBlock`,
+    `  quote="${escapeString(comp.text)}"`,
+  ];
+  if (comp.author) lines.push(`  author="${escapeString(comp.author)}"`);
+  if (comp.style) lines.push(`  style="${escapeString(comp.style)}"`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// ArchitectureDiagram
+// ---------------------------------------------------------------------------
+
+function buildArchitecture(comp: ArchitectureComponent): string {
+  const layersArr = comp.layers.map((layer) => {
+    const itemsStr = layer.items.map((item) => `"${escapeString(item)}"`).join(", ");
+    return `{ label: "${escapeString(layer.label)}", items: [${itemsStr}] }`;
+  });
+
+  const lines: string[] = [`<ArchitectureDiagram`];
+  if (comp.title) lines.push(`  title="${escapeString(comp.title)}"`);
+  lines.push(
+    `  layers={[`,
+    ...layersArr.map((l) => `    ${l},`),
+    `  ]}`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// ZoomReveal
+// ---------------------------------------------------------------------------
+
+function buildZoomReveal(comp: ZoomRevealComponent): string {
+  const itemsArr = comp.items.map((item) => {
+    const parts = [`text: "${escapeString(item.text)}"`];
+    if (item.detail) parts.push(`detail: "${escapeString(item.detail)}"`);
+    return `{ ${parts.join(", ")} }`;
+  });
+
+  const lines: string[] = [`<ZoomReveal`];
+  if (comp.style) lines.push(`  style="${escapeString(comp.style)}"`);
+  lines.push(
+    `  items={[`,
+    ...itemsArr.map((i) => `    ${i},`),
+    `  ]}`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// MorphTransition
+// ---------------------------------------------------------------------------
+
+function buildMorph(comp: MorphComponent): string {
+  const fromParts = [`text: "${escapeString(comp.from.text)}"`];
+  if (comp.from.subtitle) fromParts.push(`subtitle: "${escapeString(comp.from.subtitle)}"`);
+
+  const toParts = [`text: "${escapeString(comp.to.text)}"`];
+  if (comp.to.subtitle) toParts.push(`subtitle: "${escapeString(comp.to.subtitle)}"`);
+
+  const lines: string[] = [
+    `<MorphTransition`,
+    `  from={{ ${fromParts.join(", ")} }}`,
+    `  to={{ ${toParts.join(", ")} }}`,
+  ];
+  if (comp.style) lines.push(`  style="${escapeString(comp.style)}"`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// KineticText
+// ---------------------------------------------------------------------------
+
+function buildKineticText(comp: KineticTextComponent): string {
+  const lines: string[] = [
+    `<KineticText`,
+    `  text="${escapeString(comp.text)}"`,
+  ];
+  if (comp.style) lines.push(`  style="${escapeString(comp.style)}"`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// CodeDiff
+// ---------------------------------------------------------------------------
+
+function buildCodeDiff(comp: CodeDiffComponent): string {
+  const lines: string[] = [
+    `<CodeDiff`,
+    `  before={"${escapeString(comp.before)}"}`,
+    `  after={"${escapeString(comp.after)}"}`,
+  ];
+  if (comp.language) lines.push(`  language="${escapeString(comp.language)}"`);
+  if (comp.title) lines.push(`  title="${escapeString(comp.title)}"`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// FileTreeWalk
+// ---------------------------------------------------------------------------
+
+function serializeFileTree(nodes: import("../parser/types").FileTreeNode[]): string {
+  const items = nodes.map((node) => {
+    const parts = [
+      `name: "${escapeString(node.name)}"`,
+      `type: "${node.type}"`,
+    ];
+    if (node.children && node.children.length > 0) {
+      parts.push(`children: ${serializeFileTree(node.children)}`);
+    }
+    return `{ ${parts.join(", ")} }`;
+  });
+  return `[${items.join(", ")}]`;
+}
+
+function buildFileTreeWalk(comp: FileTreeWalkComponent): string {
+  const lines: string[] = [
+    `<FileTreeWalk`,
+    `  tree={${serializeFileTree(comp.tree)}}`,
+  ];
+  if (comp.highlight && comp.highlight.length > 0) {
+    lines.push(`  highlight={[${comp.highlight.map((h) => `"${escapeString(h)}"`).join(", ")}]}`);
+  }
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// TypingCode
+// ---------------------------------------------------------------------------
+
+function buildTypingCode(comp: TypingCodeComponent): string {
+  const lines: string[] = [
+    `<TypingCode`,
+    `  code={"${escapeString(comp.code)}"}`,
+  ];
+  if (comp.language) lines.push(`  language="${escapeString(comp.language)}"`);
+  if (comp.speed !== undefined) lines.push(`  speed={${comp.speed}}`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// AnimatedCounter
+// ---------------------------------------------------------------------------
+
+function buildAnimatedCounter(comp: AnimatedCounterComponent): string {
+  const statsArr = comp.stats.map((s) => {
+    const parts = [`label: "${escapeString(s.label)}"`, `value: ${s.value}`];
+    if (s.suffix) parts.push(`suffix: "${escapeString(s.suffix)}"`);
+    if (s.prefix) parts.push(`prefix: "${escapeString(s.prefix)}"`);
+    return `{ ${parts.join(", ")} }`;
+  });
+
+  return [
+    `<AnimatedCounter`,
+    `  stats={[`,
+    ...statsArr.map((s) => `    ${s},`),
+    `  ]}`,
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`,
+  ].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// ComparisonSlider
+// ---------------------------------------------------------------------------
+
+function buildComparisonSlider(comp: ComparisonSliderComponent): string {
+  const lines: string[] = [
+    `<ComparisonSlider`,
+    `  before="${escapeString(comp.before)}"`,
+    `  after="${escapeString(comp.after)}"`,
+  ];
+  if (comp.initialPosition !== undefined) lines.push(`  initialPosition={${comp.initialPosition}}`);
+  lines.push(
+    `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
+    `  theme={theme}`,
+    `/>`
+  );
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// SceneStack
+// ---------------------------------------------------------------------------
+
+function buildSceneStack(comp: SceneStackComponent): string {
+  const layersArr = comp.layers.map((layer) => {
+    const parts = [
+      `label: "${escapeString(layer.label)}"`,
+      `content: "${escapeString(layer.content)}"`,
+    ];
+    if (layer.depth !== undefined) parts.push(`depth: ${layer.depth}`);
+    return `{ ${parts.join(", ")} }`;
+  });
+
+  return [
+    `<SceneStack`,
+    `  layers={[`,
+    ...layersArr.map((l) => `    ${l},`),
+    `  ]}`,
     `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
     `  theme={theme}`,
     `/>`,

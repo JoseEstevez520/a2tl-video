@@ -1,0 +1,61 @@
+VDSL/1
+theme dark-tech
+canvas 1920x1080
+
+scene "Intro" 5s cut
+  particles 0-5s
+    count: 50
+    pattern: drift
+  glow 0-5s
+    x: 50
+    y: 40
+    size: 400
+  text "VDSL" hero center word-stagger 0-3s
+  label "38 components. One format." center 2s
+
+scene "Code" 7s crossfade
+  code-reveal "import { render } from 'vdsl';\n\nconst video = parse('demo.vdsl');\nconst jsx = compile(video);\n\nawait render(jsx, 'output.mp4');" javascript 0-7s
+    title: "render.ts"
+    highlight: 4,5
+
+scene "Data" 6s crossfade
+  chart bar "Performance Comparison" 0-6s
+    data: "HyperFrames" 8000, "Remotion" 1800, "VDSL" 400
+
+scene "Architecture" 7s crossfade
+  architecture 0-7s
+    title: "VDSL Pipeline"
+    layer "Input" ".vdsl file"
+    layer "Parser" "Tokenizer" "AST Builder"
+    layer "Compiler" "Code Generator" "Theme Resolver"
+    layer "Renderer" "Remotion" "Chrome" "FFmpeg"
+
+scene "Timeline" 6s crossfade
+  timeline 0-6s horizontal
+    "Parse" "Tokenize the .vdsl file"
+    "Compile" "Generate Remotion JSX"
+    "Render" "Headless Chrome → MP4"
+
+scene "Counter" 5s crossfade
+  count-up 38 0-5s
+    suffix: ""
+    label: "Components"
+
+scene "Features" 6s crossfade
+  icon-grid 3 0-6s
+    "check" "Fast" "Render in seconds"
+    "star" "Beautiful" "SVG animations"
+    "lock" "Typed" "Full TypeScript"
+    "bolt" "Themes" "3 built-in"
+    "code" "Open" "MIT License"
+    "globe" "Extensible" "Add your own"
+
+scene "Compare" 6s crossfade
+  split-screen 0-6s slide-in
+    left: "Without VDSL" "Write 2,000+ lines of HTML/JSX per video manually"
+    right: "With VDSL" "Write ~100 lines of declarative VDSL"
+
+scene "Close" 4s crossfade
+  quote "Describe videos. Render beauty." 0-4s
+    style: editorial
+  byline "github.com/JoseEstevez520/vdsl" bottom-right 2s

@@ -31,6 +31,13 @@ import type {
   TraceLogEntry,
   VizType,
   CodeModifier,
+  ChartComponent,
+  TerminalComponent,
+  TimelineComponent,
+  ProgressComponent,
+  IconGridComponent,
+  ArchitectureComponent,
+  ZoomRevealComponent,
 } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -501,6 +508,578 @@ function parseByline(tokens: Token[], lineNumber: number): Component {
 }
 
 // ---------------------------------------------------------------------------
+// New component parsers
+// ---------------------------------------------------------------------------
+
+/**
+ * code-reveal "content" <language> <timing>
+ *   title: "<filename>"
+ *   highlight: 3,5,7
+ */
+function parseCodeReveal(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const code = expectString(tokens[0], lineNumber, "code content");
+  // language is optional keyword before timing
+  let language: string | undefined;
+  let timingOffset = 1;
+  if (tokens[1] && tokens[1].kind === "keyword") {
+    // Peek: if it could be parsed as timing, treat it as timing; otherwise language
+    const maybeLanguage = tokenValue(tokens[1]);
+    const asTiming = parseTiming(maybeLanguage);
+    if (!asTiming) {
+      language = maybeLanguage;
+      timingOffset = 2;
+    }
+  }
+  const [timing] = extractTiming(tokens, timingOffset, lineNumber);
+
+  let title: string | undefined;
+  let highlightLines: number[] | undefined;
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = raw.slice(0, colonIdx).trim();
+    const rest = raw.slice(colonIdx + 1).trim();
+    if (key === "title") {
+      title = rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
+    } else if (key === "highlight") {
+      highlightLines = rest.split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n));
+    }
+  }
+
+  return {
+    type: "code-reveal",
+    code,
+    ...(language !== undefined && { language }),
+    timing,
+    ...(title !== undefined && { title }),
+    ...(highlightLines !== undefined && { highlightLines }),
+  };
+}
+
+/**
+ * chart <chartType> "<title>" <timing>
+ *   data: "Label1" 42, "Label2" 85
+ */
+function parseChart(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const chartTypeRaw = tokens[0] ? tokenValue(tokens[0]) : "bar";
+  const validChartTypes = ["bar", "line", "horizontal-bar"] as const;
+  const chartType = (validChartTypes as readonly string[]).includes(chartTypeRaw)
+    ? (chartTypeRaw as ChartComponent["chartType"])
+    : "bar";
+
+  let title: string | undefined;
+  let timingOffset = 1;
+  if (tokens[1] && tokens[1].kind === "string") {
+    title = tokens[1].value as string;
+    timingOffset = 2;
+  }
+  const [timing] = extractTiming(tokens, timingOffset, lineNumber);
+
+  const data: ChartComponent["data"] = [];
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx !== -1) {
+      const key = raw.slice(0, colonIdx).trim();
+      const rest = raw.slice(colonIdx + 1).trim();
+      if (key === "data") {
+        // Parse: "Label1" 42, "Label2" 85, ...
+        const entries = rest.split(",");
+        for (const entry of entries) {
+          const trimmed = entry.trim();
+          const match = /^"([^"]*)"[\s]+(-?\d+(?:\.\d+)?)\s*(?:(\w+))?$/.exec(trimmed);
+          if (match) {
+            const label = match[1];
+            const value = parseFloat(match[2]);
+            const color = match[3] ?? undefined;
+            data.push({ label, value, ...(color && { color }) });
+          }
+        }
+      }
+    } else {
+      // Each child line might be a data entry: "Label" value [color]
+      const ct = child.tokens;
+      if (ct.length >= 2 && ct[0].kind === "string" && ct[1].kind === "number") {
+        const label = ct[0].value as string;
+        const value = ct[1].value as number;
+        const color = ct[2] ? tokenValue(ct[2]) : undefined;
+        data.push({ label, value, ...(color && { color }) });
+      }
+    }
+  }
+
+  return {
+    type: "chart",
+    chartType,
+    ...(title !== undefined && { title }),
+    timing,
+    data,
+  };
+}
+
+/**
+ * terminal <timing>
+ *   $ command
+ *   > output
+ */
+function parseTerminal(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing] = extractTiming(tokens, 0, lineNumber);
+
+  let title: string | undefined;
+  const lines: TerminalComponent["lines"] = [];
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx !== -1) {
+      const key = raw.slice(0, colonIdx).trim();
+      const rest = raw.slice(colonIdx + 1).trim();
+      if (key === "title") {
+        title = rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
+        continue;
+      }
+    }
+    // Lines starting with $ are commands; > are output
+    if (raw.startsWith("$")) {
+      lines.push({ text: raw.slice(1).trim(), isCommand: true });
+    } else if (raw.startsWith(">")) {
+      lines.push({ text: raw.slice(1).trim(), isCommand: false });
+    } else if (raw.length > 0) {
+      lines.push({ text: raw, isCommand: false });
+    }
+  }
+
+  return {
+    type: "terminal",
+    timing,
+    lines,
+    ...(title !== undefined && { title }),
+  };
+}
+
+/**
+ * timeline <timing> [direction]
+ *   "Phase 1" "Description"
+ */
+function parseTimeline(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing, afterTiming] = extractTiming(tokens, 0, lineNumber);
+  let direction: TimelineComponent["direction"] | undefined;
+  if (tokens[afterTiming]) {
+    const dir = tokenValue(tokens[afterTiming]);
+    if (dir === "horizontal" || dir === "vertical") {
+      direction = dir;
+    }
+  }
+
+  const events: TimelineComponent["events"] = [];
+  for (const child of children) {
+    const ct = child.tokens;
+    if (ct.length === 0) continue;
+    const label = ct[0].kind === "string" ? (ct[0].value as string) : tokenValue(ct[0]);
+    const description = ct[1] && ct[1].kind === "string" ? (ct[1].value as string) : undefined;
+    const color = ct[2] ? tokenValue(ct[2]) : undefined;
+    events.push({ label, ...(description !== undefined && { description }), ...(color && { color }) });
+  }
+
+  return {
+    type: "timeline",
+    timing,
+    ...(direction !== undefined && { direction }),
+    events,
+  };
+}
+
+/**
+ * progress <timing>
+ *   "Label" value [color]
+ */
+function parseProgress(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing] = extractTiming(tokens, 0, lineNumber);
+
+  const bars: ProgressComponent["bars"] = [];
+  for (const child of children) {
+    const ct = child.tokens;
+    if (ct.length < 2) continue;
+    const label = ct[0].kind === "string" ? (ct[0].value as string) : tokenValue(ct[0]);
+    const value = ct[1].kind === "number" ? (ct[1].value as number) : parseFloat(tokenValue(ct[1]));
+    const color = ct[2] ? tokenValue(ct[2]) : undefined;
+    bars.push({ label, value, ...(color && { color }) });
+  }
+
+  return { type: "progress", timing, bars };
+}
+
+/**
+ * count-up <value> <timing>
+ *   prefix: "$"
+ *   suffix: "K"
+ *   label: "Revenue"
+ */
+function parseCountUp(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const value = expectNumber(tokens[0], lineNumber, "count-up value");
+  const [timing] = extractTiming(tokens, 1, lineNumber);
+
+  let prefix: string | undefined;
+  let suffix: string | undefined;
+  let label: string | undefined;
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = raw.slice(0, colonIdx).trim();
+    const rest = raw.slice(colonIdx + 1).trim();
+    const val = rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
+    if (key === "prefix") prefix = val;
+    else if (key === "suffix") suffix = val;
+    else if (key === "label") label = val;
+  }
+
+  return {
+    type: "count-up",
+    value,
+    timing,
+    ...(prefix !== undefined && { prefix }),
+    ...(suffix !== undefined && { suffix }),
+    ...(label !== undefined && { label }),
+  };
+}
+
+/**
+ * split-screen <timing> [animation]
+ *   left: "Title" "Content"
+ *   right: "Title" "Content"
+ */
+function parseSplitScreen(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing, afterTiming] = extractTiming(tokens, 0, lineNumber);
+  const animation = tokens[afterTiming] ? tokenValue(tokens[afterTiming]) : undefined;
+
+  let left: { title: string; content: string } = { title: "", content: "" };
+  let right: { title: string; content: string } = { title: "", content: "" };
+  let divider: string | undefined;
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = raw.slice(0, colonIdx).trim();
+    const rest = raw.slice(colonIdx + 1).trim();
+
+    if (key === "divider") {
+      divider = rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
+    } else if (key === "left" || key === "right") {
+      // Parse remaining tokens: "Title" "Content"
+      const ct = child.tokens.slice(1); // skip `left:` or `right:`
+      // Re-parse: the colon may merge with keyword in raw, use tokens from child
+      // Find string tokens in child
+      const strings: string[] = child.tokens
+        .filter((t) => t.kind === "string")
+        .map((t) => t.value as string);
+      const title = strings[0] ?? "";
+      const content = strings[1] ?? "";
+      if (key === "left") left = { title, content };
+      else right = { title, content };
+    }
+  }
+
+  return {
+    type: "split-screen",
+    timing,
+    ...(animation && { animation }),
+    left,
+    right,
+    ...(divider !== undefined && { divider }),
+  };
+}
+
+/**
+ * icon-grid <columns> <timing>
+ *   "icon" "Label" "Description"
+ */
+function parseIconGrid(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const columns = expectNumber(tokens[0], lineNumber, "icon-grid columns");
+  const [timing] = extractTiming(tokens, 1, lineNumber);
+
+  const items: IconGridComponent["items"] = [];
+  for (const child of children) {
+    const ct = child.tokens;
+    if (ct.length === 0) continue;
+    const icon = ct[0].kind === "string" ? (ct[0].value as string) : tokenValue(ct[0]);
+    const label = ct[1] && ct[1].kind === "string" ? (ct[1].value as string) : (ct[1] ? tokenValue(ct[1]) : "");
+    const description = ct[2] && ct[2].kind === "string" ? (ct[2].value as string) : undefined;
+    items.push({ icon, label, ...(description !== undefined && { description }) });
+  }
+
+  return { type: "icon-grid", columns, timing, items };
+}
+
+/**
+ * particles <timing>
+ *   count: 40
+ *   pattern: drift
+ *   opacity: 0.5
+ */
+function parseParticles(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing] = extractTiming(tokens, 0, lineNumber);
+
+  let count: number | undefined;
+  let pattern: string | undefined;
+  let opacity: number | undefined;
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = raw.slice(0, colonIdx).trim();
+    const rest = raw.slice(colonIdx + 1).trim();
+    if (key === "count") count = parseInt(rest, 10);
+    else if (key === "pattern") pattern = rest;
+    else if (key === "opacity") opacity = parseFloat(rest);
+  }
+
+  return {
+    type: "particles",
+    timing,
+    ...(count !== undefined && { count }),
+    ...(pattern !== undefined && { pattern }),
+    ...(opacity !== undefined && { opacity }),
+  };
+}
+
+/**
+ * glow <timing>
+ *   x: 50
+ *   y: 40
+ *   size: 300
+ *   color: "#fff"
+ */
+function parseGlow(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing] = extractTiming(tokens, 0, lineNumber);
+
+  let x: number | undefined;
+  let y: number | undefined;
+  let size: number | undefined;
+  let color: string | undefined;
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = raw.slice(0, colonIdx).trim();
+    const rest = raw.slice(colonIdx + 1).trim();
+    if (key === "x") x = parseFloat(rest);
+    else if (key === "y") y = parseFloat(rest);
+    else if (key === "size") size = parseFloat(rest);
+    else if (key === "color") color = rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
+  }
+
+  return {
+    type: "glow",
+    timing,
+    ...(x !== undefined && { x }),
+    ...(y !== undefined && { y }),
+    ...(size !== undefined && { size }),
+    ...(color !== undefined && { color }),
+  };
+}
+
+/**
+ * quote "<text>" <timing>
+ *   author: "Name"
+ *   style: editorial
+ */
+function parseQuote(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const text = expectString(tokens[0], lineNumber, "quote text");
+  const [timing] = extractTiming(tokens, 1, lineNumber);
+
+  let author: string | undefined;
+  let style: string | undefined;
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = raw.slice(0, colonIdx).trim();
+    const rest = raw.slice(colonIdx + 1).trim();
+    const val = rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
+    if (key === "author") author = val;
+    else if (key === "style") style = val;
+  }
+
+  return {
+    type: "quote",
+    text,
+    timing,
+    ...(author !== undefined && { author }),
+    ...(style !== undefined && { style }),
+  };
+}
+
+/**
+ * architecture <timing>
+ *   title: "Tech Stack"
+ *   layer "Frontend" "React" "Remotion" "Tailwind"
+ */
+function parseArchitecture(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing] = extractTiming(tokens, 0, lineNumber);
+
+  let title: string | undefined;
+  const layers: ArchitectureComponent["layers"] = [];
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    const ct = child.tokens;
+    const kw = ct[0] ? tokenValue(ct[0]) : "";
+
+    if (kw === "layer") {
+      const label = ct[1] && ct[1].kind === "string" ? (ct[1].value as string) : (ct[1] ? tokenValue(ct[1]) : "");
+      const items = ct.slice(2).map((t) => (t.kind === "string" ? (t.value as string) : tokenValue(t)));
+      layers.push({ label, items });
+    } else if (colonIdx !== -1) {
+      const key = raw.slice(0, colonIdx).trim();
+      const rest = raw.slice(colonIdx + 1).trim();
+      if (key === "title") {
+        title = rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
+      }
+    }
+  }
+
+  return {
+    type: "architecture",
+    timing,
+    ...(title !== undefined && { title }),
+    layers,
+  };
+}
+
+/**
+ * zoom-reveal <timing>
+ *   "Concept" "Detail"
+ */
+function parseZoomReveal(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing, afterTiming] = extractTiming(tokens, 0, lineNumber);
+  const style = tokens[afterTiming] ? tokenValue(tokens[afterTiming]) : undefined;
+
+  const items: ZoomRevealComponent["items"] = [];
+  for (const child of children) {
+    const ct = child.tokens;
+    if (ct.length === 0) continue;
+    const text = ct[0].kind === "string" ? (ct[0].value as string) : tokenValue(ct[0]);
+    const detail = ct[1] && ct[1].kind === "string" ? (ct[1].value as string) : undefined;
+    items.push({ text, ...(detail !== undefined && { detail }) });
+  }
+
+  return {
+    type: "zoom-reveal",
+    timing,
+    items,
+    ...(style !== undefined && { style }),
+  };
+}
+
+/**
+ * morph <timing>
+ *   from: "Problem" "The old way"
+ *   to: "Solution" "The new way"
+ *   style: scale-swap
+ */
+function parseMorph(
+  tokens: Token[],
+  lineNumber: number,
+  children: TokenizedLine[]
+): Component {
+  const [timing] = extractTiming(tokens, 0, lineNumber);
+
+  let from: { text: string; subtitle?: string } = { text: "" };
+  let to: { text: string; subtitle?: string } = { text: "" };
+  let style: string | undefined;
+
+  for (const child of children) {
+    const raw = child.raw.trim();
+    const colonIdx = raw.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = raw.slice(0, colonIdx).trim();
+
+    if (key === "style") {
+      const rest = raw.slice(colonIdx + 1).trim();
+      style = rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
+    } else if (key === "from" || key === "to") {
+      const strings: string[] = child.tokens
+        .filter((t) => t.kind === "string")
+        .map((t) => t.value as string);
+      const text = strings[0] ?? "";
+      const subtitle = strings[1] ?? undefined;
+      if (key === "from") from = { text, ...(subtitle !== undefined && { subtitle }) };
+      else to = { text, ...(subtitle !== undefined && { subtitle }) };
+    }
+  }
+
+  return {
+    type: "morph",
+    timing,
+    from,
+    to,
+    ...(style !== undefined && { style }),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Scene parser
 // ---------------------------------------------------------------------------
 
@@ -565,6 +1144,10 @@ function parseComponents(lines: TokenizedLine[]): Component[] {
     const needsChildren = new Set([
       "text-cycle", "triptych", "step-sequence", "comparison",
       "card", "code", "trace-log", "viz",
+      // New component types
+      "code-reveal", "chart", "terminal", "timeline", "progress",
+      "count-up", "split-screen", "icon-grid", "particles", "glow",
+      "quote", "architecture", "zoom-reveal", "morph",
     ]);
 
     if (needsChildren.has(kw)) {
@@ -597,6 +1180,49 @@ function parseComponents(lines: TokenizedLine[]): Component[] {
           break;
         case "viz":
           components.push(parseViz(rest, line.lineNumber, children));
+          break;
+        // New component types
+        case "code-reveal":
+          components.push(parseCodeReveal(rest, line.lineNumber, children));
+          break;
+        case "chart":
+          components.push(parseChart(rest, line.lineNumber, children));
+          break;
+        case "terminal":
+          components.push(parseTerminal(rest, line.lineNumber, children));
+          break;
+        case "timeline":
+          components.push(parseTimeline(rest, line.lineNumber, children));
+          break;
+        case "progress":
+          components.push(parseProgress(rest, line.lineNumber, children));
+          break;
+        case "count-up":
+          components.push(parseCountUp(rest, line.lineNumber, children));
+          break;
+        case "split-screen":
+          components.push(parseSplitScreen(rest, line.lineNumber, children));
+          break;
+        case "icon-grid":
+          components.push(parseIconGrid(rest, line.lineNumber, children));
+          break;
+        case "particles":
+          components.push(parseParticles(rest, line.lineNumber, children));
+          break;
+        case "glow":
+          components.push(parseGlow(rest, line.lineNumber, children));
+          break;
+        case "quote":
+          components.push(parseQuote(rest, line.lineNumber, children));
+          break;
+        case "architecture":
+          components.push(parseArchitecture(rest, line.lineNumber, children));
+          break;
+        case "zoom-reveal":
+          components.push(parseZoomReveal(rest, line.lineNumber, children));
+          break;
+        case "morph":
+          components.push(parseMorph(rest, line.lineNumber, children));
           break;
       }
     } else {

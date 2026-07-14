@@ -225,6 +225,198 @@ export interface BylineComponent {
   timing: Timing;
 }
 
+// ---------------------------------------------------------------------------
+// New component types
+// ---------------------------------------------------------------------------
+
+/** `code-reveal "…" <language> <timing>` */
+export interface CodeRevealComponent {
+  type: "code-reveal";
+  code: string;
+  language?: string;
+  timing: Timing;
+  title?: string;
+  highlightLines?: number[];
+}
+
+/** `chart <chartType> "<title>" <timing>` */
+export interface ChartComponent {
+  type: "chart";
+  chartType: "bar" | "line" | "horizontal-bar";
+  title?: string;
+  timing: Timing;
+  data: { label: string; value: number; color?: string }[];
+}
+
+/** `terminal <timing>` */
+export interface TerminalComponent {
+  type: "terminal";
+  timing: Timing;
+  lines: { text: string; isCommand: boolean }[];
+  title?: string;
+}
+
+/** `timeline <timing> <direction>` */
+export interface TimelineComponent {
+  type: "timeline";
+  timing: Timing;
+  direction?: "horizontal" | "vertical";
+  events: { label: string; description?: string; color?: string }[];
+}
+
+/** `progress <timing>` */
+export interface ProgressComponent {
+  type: "progress";
+  timing: Timing;
+  bars: { label: string; value: number; color?: string }[];
+}
+
+/** `count-up <value> <timing>` */
+export interface CountUpComponent {
+  type: "count-up";
+  value: number;
+  timing: Timing;
+  prefix?: string;
+  suffix?: string;
+  label?: string;
+}
+
+/** `split-screen <timing> <animation>` */
+export interface SplitScreenComponent {
+  type: "split-screen";
+  timing: Timing;
+  animation?: string;
+  left: { title: string; content: string };
+  right: { title: string; content: string };
+  divider?: string;
+}
+
+/** `icon-grid <columns> <timing>` */
+export interface IconGridComponent {
+  type: "icon-grid";
+  columns: number;
+  timing: Timing;
+  items: { icon: string; label: string; description?: string }[];
+}
+
+/** `particles <timing>` */
+export interface ParticlesComponent {
+  type: "particles";
+  timing: Timing;
+  count?: number;
+  pattern?: string;
+  opacity?: number;
+}
+
+/** `glow <timing>` */
+export interface GlowComponent {
+  type: "glow";
+  timing: Timing;
+  x?: number;
+  y?: number;
+  size?: number;
+  color?: string;
+}
+
+/** `quote "<text>" <timing>` */
+export interface QuoteComponent {
+  type: "quote";
+  text: string;
+  timing: Timing;
+  author?: string;
+  style?: string;
+}
+
+/** `architecture <timing>` */
+export interface ArchitectureComponent {
+  type: "architecture";
+  timing: Timing;
+  title?: string;
+  layers: { label: string; items: string[] }[];
+}
+
+/** `zoom-reveal <timing>` */
+export interface ZoomRevealComponent {
+  type: "zoom-reveal";
+  timing: Timing;
+  items: { text: string; detail?: string }[];
+  style?: string;
+}
+
+/** `morph <timing>` */
+export interface MorphComponent {
+  type: "morph";
+  timing: Timing;
+  from: { text: string; subtitle?: string };
+  to: { text: string; subtitle?: string };
+  style?: string;
+}
+
+/** `kinetic-text "<text>" <timing>` */
+export interface KineticTextComponent {
+  type: "kinetic-text";
+  text: string;
+  timing: Timing;
+  style?: string;
+}
+
+/** `code-diff <timing>` */
+export interface CodeDiffComponent {
+  type: "code-diff";
+  timing: Timing;
+  language?: string;
+  before: string;
+  after: string;
+  title?: string;
+}
+
+/** A node in a file tree */
+export interface FileTreeNode {
+  name: string;
+  type: "file" | "dir";
+  children?: FileTreeNode[];
+}
+
+/** `file-tree-walk <timing>` */
+export interface FileTreeWalkComponent {
+  type: "file-tree-walk";
+  timing: Timing;
+  tree: FileTreeNode[];
+  highlight?: string[];
+}
+
+/** `typing-code <timing>` */
+export interface TypingCodeComponent {
+  type: "typing-code";
+  timing: Timing;
+  code: string;
+  language?: string;
+  speed?: number;
+}
+
+/** `animated-counter <timing>` */
+export interface AnimatedCounterComponent {
+  type: "animated-counter";
+  timing: Timing;
+  stats: { label: string; value: number; suffix?: string; prefix?: string }[];
+}
+
+/** `comparison-slider <timing>` */
+export interface ComparisonSliderComponent {
+  type: "comparison-slider";
+  timing: Timing;
+  before: string;
+  after: string;
+  initialPosition?: number;
+}
+
+/** `scene-stack <timing>` */
+export interface SceneStackComponent {
+  type: "scene-stack";
+  timing: Timing;
+  layers: { label: string; content: string; depth?: number }[];
+}
+
 export type Component =
   | TextComponent
   | TextCycleComponent
@@ -236,7 +428,28 @@ export type Component =
   | CodeComponent
   | TraceLogComponent
   | VizComponent
-  | BylineComponent;
+  | BylineComponent
+  | CodeRevealComponent
+  | ChartComponent
+  | TerminalComponent
+  | TimelineComponent
+  | ProgressComponent
+  | CountUpComponent
+  | SplitScreenComponent
+  | IconGridComponent
+  | ParticlesComponent
+  | GlowComponent
+  | QuoteComponent
+  | ArchitectureComponent
+  | ZoomRevealComponent
+  | MorphComponent
+  | KineticTextComponent
+  | CodeDiffComponent
+  | FileTreeWalkComponent
+  | TypingCodeComponent
+  | AnimatedCounterComponent
+  | ComparisonSliderComponent
+  | SceneStackComponent;
 
 // ---------------------------------------------------------------------------
 // Top-level document
