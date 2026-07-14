@@ -124,50 +124,79 @@ function cmdRender(positional: string[], flags: Record<string, string | boolean>
   const source = readVDSL(inputFile);
   const spec = parseVDSL(source);
   const themeName = (flags["theme"] as string) ?? spec.theme ?? "cobalt-grid";
-  const jsx = compile(spec, { themeName });
 
-  // Compute total duration for config
-  const totalFrames = spec.scenes.reduce(
-    (sum, scene) => sum + Math.round(scene.duration * 30),
-    0
-  );
-  const width = spec.canvas?.width ?? 1920;
-  const height = spec.canvas?.height ?? 1080;
+  // Compile with relative imports so the workspace is self-contained
+  const jsx = compile(spec, { themeName, relativeImports: true });
 
   // Create a temp Remotion project
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vdsl-render-"));
-  info(`Temp project: ${tmpDir}`);
+  info(`Workspace: ${tmpDir}`);
 
   try {
-    // Write Video.jsx
-    const videoJsxPath = path.join(tmpDir, "Video.jsx");
-    fs.writeFileSync(videoJsxPath, jsx, "utf-8");
+    // Copy VDSL components and themes into the workspace
+    const vdslRoot = path.resolve(__dirname, "..");
+    const srcRoot = fs.existsSync(path.join(vdslRoot, "src")) ? path.join(vdslRoot, "src") : vdslRoot;
 
-    // Write Root.jsx
-    const rootContent = buildRemotionRoot("Video", totalFrames, 30, width, height);
-    fs.writeFileSync(path.join(tmpDir, "Root.jsx"), rootContent, "utf-8");
+    copyDirRecursive(
+      path.join(srcRoot, "components"),
+      path.join(tmpDir, "components")
+    );
+    copyDirRecursive(
+      path.join(srcRoot, "themes"),
+      path.join(tmpDir, "themes")
+    );
 
-    // Write index.js (Remotion entry)
-    const indexContent = buildRemotionIndex();
-    fs.writeFileSync(path.join(tmpDir, "index.js"), indexContent, "utf-8");
+    // Copy parser/types.ts (themes import it)
+    const typesSource = path.join(srcRoot, "parser", "types.ts");
+    if (fs.existsSync(typesSource)) {
+      fs.copyFileSync(typesSource, path.join(tmpDir, "types.ts"));
+      // Fix theme imports from ../parser/types to ../types
+      fixThemeImports(path.join(tmpDir, "themes"));
+    }
 
-    // Write remotion.config.js
-    const configContent = buildRemotionConfig();
-    fs.writeFileSync(path.join(tmpDir, "remotion.config.js"), configContent, "utf-8");
+    // Write the compiled entry point (it includes registerRoot + Composition)
+    fs.writeFileSync(path.join(tmpDir, "index.tsx"), jsx, "utf-8");
 
-    // Write package.json
-    const pkgContent = buildTmpPackageJson();
-    fs.writeFileSync(path.join(tmpDir, "package.json"), pkgContent, "utf-8");
+    // Write tsconfig.json
+    fs.writeFileSync(path.join(tmpDir, "tsconfig.json"), JSON.stringify({
+      compilerOptions: {
+        target: "ES2020",
+        module: "preserve",
+        jsx: "react-jsx",
+        strict: false,
+        esModuleInterop: true,
+        skipLibCheck: true,
+        moduleResolution: "bundler",
+        types: ["node"],
+      },
+      include: ["**/*.ts", "**/*.tsx"],
+    }, null, 2), "utf-8");
+
+    // Write package.json (no vdsl dependency — components are local)
+    fs.writeFileSync(path.join(tmpDir, "package.json"), JSON.stringify({
+      name: "vdsl-render-tmp",
+      version: "0.0.1",
+      private: true,
+      dependencies: {
+        react: "^18",
+        "react-dom": "^18",
+        remotion: "^4",
+        "@remotion/cli": "^4",
+        typescript: "~5.8",
+        "@types/react": "^18",
+      },
+    }, null, 2), "utf-8");
 
     // Install dependencies
-    info("Installing remotion dependencies…");
-    const installResult = spawnSync("npm", ["install", "--prefer-offline", "--silent"], {
-      cwd: tmpDir,
-      stdio: "inherit",
-      shell: true,
-    });
-    if (installResult.status !== 0) {
-      die("npm install failed — ensure Node and npm are available.");
+    info("Installing dependencies…");
+    try {
+      execSync("npm install --prefer-offline --silent", {
+        cwd: tmpDir,
+        stdio: "pipe",
+      });
+    } catch (e: any) {
+      const stderr = e?.stderr?.toString() ?? "";
+      die(`npm install failed: ${stderr.slice(0, 300)}`);
     }
 
     // Determine output path
@@ -179,31 +208,25 @@ function cmdRender(positional: string[], flags: Record<string, string | boolean>
       (flags["o"] as string) ?? (flags["output"] as string) ?? defaultMp4
     );
 
-    info(`Rendering with Remotion → ${outPath}`);
+    info(`Rendering → ${outPath}`);
 
-    const renderResult = spawnSync(
-      "npx",
-      [
-        "remotion",
-        "render",
-        "index.js",           // entry point
-        "Video",              // composition id
-        outPath,
-      ],
-      {
+    try {
+      const result = execSync(`npx remotion render index.tsx Video "${outPath}" --concurrency=50%`, {
         cwd: tmpDir,
-        stdio: "inherit",
-        shell: true,
-      }
-    );
-
-    if (renderResult.status !== 0) {
-      die("Remotion render failed. Check the output above.");
+        stdio: "pipe",
+        timeout: 300000,
+      });
+      console.log(result.toString().split("\n").slice(-5).join("\n"));
+    } catch (e: any) {
+      const stderr = e?.stderr?.toString() ?? "";
+      const stdout = e?.stdout?.toString() ?? "";
+      console.error(stdout.slice(-500));
+      console.error(stderr.slice(-500));
+      die("Remotion render failed.");
     }
 
     ok(`Rendered → ${outPath}`);
   } finally {
-    // Clean up temp dir
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } catch {
@@ -212,65 +235,32 @@ function cmdRender(positional: string[], flags: Record<string, string | boolean>
   }
 }
 
-function buildRemotionRoot(
-  componentName: string,
-  durationInFrames: number,
-  fps: number,
-  width: number,
-  height: number
-): string {
-  return [
-    `import React from 'react';`,
-    `import { Composition } from 'remotion';`,
-    `import { ${componentName} } from './Video.jsx';`,
-    ``,
-    `export const RemotionRoot = () => (`,
-    `  <Composition`,
-    `    id="${componentName}"`,
-    `    component={${componentName}}`,
-    `    durationInFrames={${durationInFrames}}`,
-    `    fps={${fps}}`,
-    `    width={${width}}`,
-    `    height={${height}}`,
-    `  />`,
-    `);`,
-  ].join("\n");
+/** Recursively copy a directory */
+function copyDirRecursive(src: string, dest: string): void {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
 }
 
-function buildRemotionIndex(): string {
-  return [
-    `import { registerRoot } from 'remotion';`,
-    `import { RemotionRoot } from './Root.jsx';`,
-    `registerRoot(RemotionRoot);`,
-  ].join("\n");
+/** Fix theme imports from ../parser/types to ../types */
+function fixThemeImports(themesDir: string): void {
+  for (const file of fs.readdirSync(themesDir)) {
+    if (file.endsWith(".ts")) {
+      const filePath = path.join(themesDir, file);
+      let content = fs.readFileSync(filePath, "utf-8");
+      content = content.replace(/from\s+["']\.\.\/parser\/types["']/g, 'from "../types"');
+      fs.writeFileSync(filePath, content, "utf-8");
+    }
+  }
 }
 
-function buildRemotionConfig(): string {
-  return [
-    `import { Config } from '@remotion/cli/config';`,
-    `Config.setVideoImageFormat('jpeg');`,
-    `Config.setOverwriteOutput(true);`,
-  ].join("\n");
-}
-
-function buildTmpPackageJson(): string {
-  return JSON.stringify(
-    {
-      name: "vdsl-render-tmp",
-      version: "0.0.1",
-      private: true,
-      dependencies: {
-        react: "^18",
-        "react-dom": "^18",
-        remotion: "^4",
-        "@remotion/cli": "^4",
-        vdsl: "*",
-      },
-    },
-    null,
-    2
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Command: themes

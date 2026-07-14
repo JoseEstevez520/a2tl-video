@@ -39,6 +39,11 @@ export interface CompileOptions {
    * Name of the exported composition component (default: "Video").
    */
   componentName?: string;
+  /**
+   * Use relative imports (./components, ./themes) instead of package imports (vdsl/components).
+   * Used by the CLI render command to create self-contained workspaces.
+   */
+  relativeImports?: boolean;
 }
 
 /**
@@ -60,7 +65,7 @@ export function compile(spec: VDSLSpec, options: CompileOptions = {}): string {
   const sections: string[] = [];
 
   // 1. Imports
-  sections.push(buildImports(usedComponents, themeName));
+  sections.push(buildImports(usedComponents, themeName, options.relativeImports ?? false));
 
   // 2. Theme constant
   sections.push(`const theme = themes['${themeName}'];`);
@@ -162,14 +167,17 @@ function collectUsedComponents(spec: VDSLSpec): Set<string> {
 // Import block
 // ---------------------------------------------------------------------------
 
-function buildImports(used: Set<string>, _themeName: string): string {
+function buildImports(used: Set<string>, _themeName: string, relativeImports = false): string {
   const vdslComponents = [...used].filter((c) => c in COMPONENT_IMPORTS).sort();
+
+  const componentImportPath = relativeImports ? './components' : 'vdsl/components';
+  const themeImportPath = relativeImports ? './themes' : 'vdsl/themes';
 
   const lines: string[] = [
     `import React from 'react';`,
-    `import { Sequence, AbsoluteFill, useCurrentFrame, useVideoConfig, registerRoot, Composition } from 'remotion';`,
-    `import { ${vdslComponents.join(", ")} } from 'vdsl/components';`,
-    `import { themes } from 'vdsl/themes';`,
+    `import { Sequence, AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring, registerRoot, Composition } from 'remotion';`,
+    `import { ${vdslComponents.join(", ")} } from '${componentImportPath}';`,
+    `import { themes } from '${themeImportPath}';`,
   ];
 
   return lines.join("\n");
