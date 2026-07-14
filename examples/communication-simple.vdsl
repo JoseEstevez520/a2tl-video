@@ -1,0 +1,56 @@
+VDSL/1
+theme dark-tech
+canvas 1920x1080
+
+scene "Hook" 5s cut
+  particles 0-5s
+    count: 30
+    pattern: drift
+  text "¿saldo bancario?" hero center word-stagger 0-4s
+  label "AGENTE → AGENTE" center 2s
+
+scene "Pain" 7s crossfade
+  text "instrucción de prompt" display center fade 0-2.5s
+  text "normas blandas" hero center word-stagger 3-7s
+
+scene "Solution" 6s crossfade
+  text "etiquetas sobre los datos" display center word-stagger 0-2.5s
+  label "VERIFICADAS EN LA PUERTA" center 1s
+  triptych 3-6s stagger
+    "PROTOCOLO"
+    "TRAZABILIDAD"
+    "ESPACIO DE TRABAJO"
+
+scene "Protocol" 8s crossfade
+  code-reveal "data.compartment ∈ recipient.allowed → PASS\ndata.compartment ∉ recipient.allowed → BLOCK" typescript 0-4s
+    title: "boundary-check.ts"
+  comparison 4-8s split-tilt
+    left: "Dato A" "Jose {A,B}" badge "PASA" green
+    right: "Dato B" "Pepito {A}" badge "BLOQUEADO" red
+
+scene "Traces" 7s crossfade
+  quote "Si cruzó — hay un registro. Si no hay registro — no cruzó." 0-3.5s
+    style: editorial
+  progress 3.5-7s
+    "pieza: dato_A → Jose" 100
+    "pieza: dato_B → Jose" 100
+    "pieza: dato_C → David" 75
+
+scene "Architecture" 7s crossfade
+  architecture 0-7s
+    title: "Tres Momentos de Control"
+    layer "Arranque" "read-in" "compartimentos"
+    layer "Trabajo" "procesa libremente"
+    layer "Aduana" "verifica etiquetas"
+
+scene "Derived" 6s crossfade
+  count-up 2 0-3s
+    label: "etiquetas heredadas (A ∪ B)"
+  text "Solo agentes con acceso a A y B" body center fade 3-6s
+
+scene "Close" 5s crossfade
+  split-screen 0-3.5s slide-in
+    left: "A2A / MCP" "Resuelven quién llama a quién"
+    right: "Esta propuesta" "Qué datos pueden fluir"
+  text "Está en la frontera." hero center word-stagger 3.5-5s
+  byline "ANFAIA / SkillNet" bottom-right 4s

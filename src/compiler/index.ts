@@ -486,15 +486,14 @@ function buildLabel(comp: LabelComponent): string {
 // ---------------------------------------------------------------------------
 
 function buildTriptych(comp: TriptychComponent): string {
-  const itemsArr = comp.items.map((item) => `{ tokens: [${item.tokens.map((t) => `"${escapeString(t)}"`).join(", ")}] }`);
+  // Triptych component expects items as string[], not {tokens: string[]}
+  const itemsArr = comp.items.map((item) => `"${escapeString(item.tokens.join(" "))}"`);
 
   return [
     `<Triptych`,
     `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
     `  reveal="${comp.reveal}"`,
-    `  items={[`,
-    itemsArr.map((i) => `    ${i},`).join("\n"),
-    `  ]}`,
+    `  items={[${itemsArr.join(", ")}]}`,
     `  theme={theme}`,
     `/>`,
   ].join("\n");
@@ -525,25 +524,22 @@ function buildStepSequence(comp: StepSequenceComponent): string {
 // ---------------------------------------------------------------------------
 
 function buildComparison(comp: ComparisonComponent): string {
-  const sidesArr = comp.sides.map((s) => {
-    const parts = [
-      `side: "${s.side}"`,
-      `title: "${escapeString(s.title)}"`,
-      `subtitle: "${escapeString(s.subtitle)}"`,
-    ];
-    if (s.badge) {
-      parts.push(`badge: { text: "${escapeString(s.badge.text)}", color: "${s.badge.color}" }`);
-    }
+  // Component expects left={...} and right={...}, not sides=[...]
+  const leftSide = comp.sides.find((s) => s.side === "left") ?? comp.sides[0];
+  const rightSide = comp.sides.find((s) => s.side === "right") ?? comp.sides[1];
+
+  function sideProps(s: typeof leftSide): string {
+    const parts = [`title: "${escapeString(s.title)}"`, `subtitle: "${escapeString(s.subtitle)}"`];
+    if (s.badge) parts.push(`badge: { text: "${escapeString(s.badge.text)}", color: "${s.badge.color}" }`);
     return `{ ${parts.join(", ")} }`;
-  });
+  }
 
   return [
     `<Comparison`,
     `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
     `  animation="${comp.animation}"`,
-    `  sides={[`,
-    sidesArr.map((s) => `    ${s},`).join("\n"),
-    `  ]}`,
+    `  left={${sideProps(leftSide)}}`,
+    `  right={${sideProps(rightSide)}}`,
     `  theme={theme}`,
     `/>`,
   ].join("\n");
