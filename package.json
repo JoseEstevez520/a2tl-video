@@ -1,0 +1,47 @@
+{
+  "name": "vdsl",
+  "version": "0.1.0",
+  "description": "Video Description Language — describe videos, render beauty",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "vdsl": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:check": "tsc --noEmit",
+    "compile": "node dist/cli.js compile",
+    "render": "node dist/cli.js render"
+  },
+  "peerDependencies": {
+    "@remotion/cli": ">=4",
+    "react": "^19.2.7",
+    "remotion": "^4.0.489"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/react": "^18.3.31",
+    "typescript": "^7.0.2"
+  },
+  "type": "commonjs",
+  "keywords": [
+    "video",
+    "dsl",
+    "remotion",
+    "explainer",
+    "animation"
+  ],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoseEstevez520/vdsl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JoseEstevez520/vdsl/issues"
+  },
+  "homepage": "https://github.com/JoseEstevez520/vdsl#readme",
+  "dependencies": {
+    "react-dom": "^19.2.7"
+  }
+}
