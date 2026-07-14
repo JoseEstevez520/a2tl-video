@@ -26,8 +26,8 @@ interface Theme {
 interface NodeDef {
   id: string;
   label: string;
-  x: number; // 0..1 normalized
-  y: number; // 0..1 normalized
+  x: number; // 0..100 percentage
+  y: number; // 0..100 percentage
   color?: string;
   size?: number;
   shape?: "circle" | "rect";
@@ -60,8 +60,8 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
   nodes,
   edges,
   annotation,
-  width = 900,
-  height = 500,
+  width = 1400,
+  height = 700,
   nodeStagger = 6,
   edgeStagger = 8,
 }) => {
@@ -71,11 +71,14 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
   const localFrame = frame - timing.start * fps;
 
   // Build node position map
+  // x,y are percentages (0-100); map to pixel coords with padding so nodes
+  // never sit on the very edge of the canvas.
+  const PAD = 80; // px of padding on each side
   const nodeMap = new Map<string, { px: number; py: number; def: NodeDef }>();
   nodes.forEach((n) => {
     nodeMap.set(n.id, {
-      px: n.x * width,
-      py: n.y * height,
+      px: PAD + (n.x / 100) * (width - PAD * 2),
+      py: PAD + (n.y / 100) * (height - PAD * 2),
       def: n,
     });
   });
@@ -91,7 +94,11 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      style={{ overflow: "visible" }}
+      style={{
+        overflow: "visible",
+        display: "block",
+        margin: "0 auto",
+      }}
     >
       <defs>
         {/* Glow filter for nodes */}
@@ -135,8 +142,8 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
               cy="30%"
               r="65%"
             >
-              <stop offset="0%" stopColor={nodeColor} stopOpacity="0.95" />
-              <stop offset="100%" stopColor={nodeColor} stopOpacity="0.6" />
+              <stop offset="0%" stopColor={nodeColor} stopOpacity="1" />
+              <stop offset="100%" stopColor={nodeColor} stopOpacity="0.85" />
             </radialGradient>
           );
         })}
@@ -204,12 +211,12 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
               d={pathData}
               fill="none"
               stroke={edgeColor}
-              strokeWidth={1.5}
+              strokeWidth={2.5}
               strokeDasharray={
                 edge.style === "dashed"
-                  ? `8 6`
+                  ? `10 7`
                   : edge.style === "dotted"
-                  ? `2 5`
+                  ? `3 6`
                   : `${pathLen} ${pathLen}`
               }
               strokeDashoffset={
@@ -219,7 +226,7 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
               }
               strokeLinecap="round"
               markerEnd={`url(#${scopeId}-arrow)`}
-              opacity={0.75}
+              opacity={0.9}
             />
             {/* Edge label */}
             {edge.label && (
@@ -259,7 +266,7 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
 
         if (scale <= 0.01) return null;
 
-        const r = (node.size ?? 28) * scale;
+        const r = (node.size ?? 36) * scale;
         const nodeColor = node.color ?? theme.colors.ink;
         const isRect = node.shape === "rect";
 
@@ -300,16 +307,16 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
                 rx={6}
                 fill={`url(#${scopeId}-node-${ni})`}
                 stroke={nodeColor}
-                strokeWidth={1.5}
-                strokeOpacity={0.6}
+                strokeWidth={2}
+                strokeOpacity={0.9}
               />
             ) : (
               <circle
                 r={r}
                 fill={`url(#${scopeId}-node-${ni})`}
                 stroke={nodeColor}
-                strokeWidth={1.5}
-                strokeOpacity={0.6}
+                strokeWidth={2}
+                strokeOpacity={0.9}
               />
             )}
 
@@ -317,11 +324,12 @@ export const NodeGraph: React.FC<NodeGraphProps> = ({
             <text
               textAnchor="middle"
               dominantBaseline="middle"
-              fill="white"
-              fontSize={Math.max(10, r * 0.45)}
+              fill="#ffffff"
+              fontSize={Math.max(12, r * 0.42)}
               fontFamily={theme.fonts.body}
-              fontWeight={600}
+              fontWeight={700}
               dy={0}
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
             >
               {node.label}
             </text>

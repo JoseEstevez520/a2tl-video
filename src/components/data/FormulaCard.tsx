@@ -118,7 +118,21 @@ export const FormulaCard: React.FC<FormulaCardProps> = ({
   return (
     <div
       style={{
-        width,
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 0,
+        height: 900,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+    <div
+      style={{
+        width: Math.min(Math.max(width, 600), 700),
+        padding: "0 32px",
+        boxSizing: "border-box",
         opacity: cardOpacity,
         transform: `scale(${cardScale})`,
         transformOrigin: "center center",
@@ -322,6 +336,7 @@ export const FormulaCard: React.FC<FormulaCardProps> = ({
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

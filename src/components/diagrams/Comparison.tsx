@@ -41,8 +41,8 @@ interface ComparisonProps {
   height?: number;
 }
 
-const CARD_W = 340;
-const CARD_H = 280;
+const CARD_W = 540;
+const CARD_H = 380;
 
 const ComparisonCard: React.FC<{
   side: ComparisonSide;
@@ -175,7 +175,7 @@ const ComparisonCard: React.FC<{
         <div
           style={{
             position: "relative",
-            padding: "28px 24px 20px",
+            padding: "36px 40px 28px",
             height: "100%",
             boxSizing: "border-box",
             display: "flex",
@@ -200,7 +200,7 @@ const ComparisonCard: React.FC<{
               <span
                 style={{
                   fontFamily: theme.fonts.mono,
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: 700,
                   color: side.badge.color,
                   letterSpacing: "0.1em",
@@ -215,12 +215,12 @@ const ComparisonCard: React.FC<{
           <div
             style={{
               fontFamily: theme.fonts.display,
-              fontSize: 24,
+              fontSize: 30,
               fontWeight: 700,
               color: theme.colors.ink,
               letterSpacing: "-0.02em",
               lineHeight: 1.2,
-              marginBottom: 8,
+              marginBottom: 10,
             }}
           >
             {side.title}
@@ -231,10 +231,10 @@ const ComparisonCard: React.FC<{
             <div
               style={{
                 fontFamily: theme.fonts.body,
-                fontSize: 13,
+                fontSize: 18,
                 color: theme.colors.inkSoft,
                 lineHeight: 1.5,
-                marginBottom: 14,
+                marginBottom: 16,
                 opacity: subtitleOpacity,
               }}
             >
@@ -266,8 +266,8 @@ const ComparisonCard: React.FC<{
             >
               <div
                 style={{
-                  width: 6,
-                  height: 6,
+                  width: 8,
+                  height: 8,
                   borderRadius: "50%",
                   background: cardColor,
                   flexShrink: 0,
@@ -276,7 +276,7 @@ const ComparisonCard: React.FC<{
               <span
                 style={{
                   fontFamily: theme.fonts.body,
-                  fontSize: 12,
+                  fontSize: 15,
                   color: theme.colors.inkSoft,
                   lineHeight: 1.4,
                 }}
@@ -298,7 +298,7 @@ export const Comparison: React.FC<ComparisonProps> = ({
   right,
   animation = "split-tilt",
   width = 860,
-  height = 340,
+  height = 900,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -320,13 +320,15 @@ export const Comparison: React.FC<ComparisonProps> = ({
   return (
     <div
       style={{
-        width,
-        height,
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 0,
+        height: 900,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 32,
-        position: "relative",
+        gap: 48,
       }}
     >
       {/* Left card */}
@@ -361,7 +363,7 @@ export const Comparison: React.FC<ComparisonProps> = ({
         <div
           style={{
             fontFamily: theme.fonts.mono,
-            fontSize: 12,
+            fontSize: 16,
             fontWeight: 700,
             color: theme.colors.inkFaint,
             letterSpacing: "0.12em",
