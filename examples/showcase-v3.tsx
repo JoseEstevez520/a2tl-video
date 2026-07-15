@@ -26,12 +26,12 @@ const TextReveal: React.FC<{text: string; fontSize: number; delay?: number; colo
   const frame = useCurrentFrame();
   const words = text.split(' ');
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: spacing, fontFamily: FONT }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', /* gap via marginRight */ fontFamily: FONT }}>
       {words.map((w, i) => {
         const d = Math.round((delay + i * 0.1) * fps);
         const o = interpolate(frame - d, [0, 12], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
         const y = interpolate(frame - d, [0, 12], [24, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-        return <span key={i} style={{ display: 'inline-block', opacity: o, transform: `translateY(${y}px)`, fontSize, fontWeight: weight, color, fontFamily: FONT }}>{w}</span>;
+        return <span key={i} style={{ display: 'inline-block', opacity: o, transform: `translateY(${y}px)`, fontSize, fontWeight: weight, color, fontFamily: FONT, marginRight: 12 }}>{w}</span>;
       })}
     </div>
   );
