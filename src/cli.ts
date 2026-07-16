@@ -16,6 +16,7 @@ import { execSync, spawnSync } from "child_process";
 
 import { parseVDSL } from "./parser";
 import { compile } from "./compiler";
+import { renderToHTML } from "./renderer";
 import { themes, themeNames } from "./themes";
 
 // ---------------------------------------------------------------------------
@@ -281,6 +282,27 @@ function cmdInit(positional: string[]): void {
   console.log(`\nNext steps:`);
   console.log(`  vdsl compile ${filename}`);
   console.log(`  vdsl render  ${filename}`);
+  console.log(`  vdsl play   ${filename}`);
+}
+
+// ---------------------------------------------------------------------------
+// Command: play (instant HTML preview)
+// ---------------------------------------------------------------------------
+
+function cmdPlay(positional: string[], flags: Record<string, string | boolean>): void {
+  const inputFile = positional[0];
+  if (!inputFile) die("Usage: vdsl play <input.vdsl> [--theme <name>]");
+
+  const source = readVDSL(inputFile);
+  const spec = parseVDSL(source);
+  const themeName = (flags["theme"] as string) ?? spec.theme ?? undefined;
+  const html = renderToHTML(spec, themeName);
+
+  const outName = path.basename(inputFile, path.extname(inputFile)) + ".html";
+  const outPath = path.resolve(process.cwd(), outName);
+  fs.writeFileSync(outPath, html, "utf-8");
+  ok(`Generated ${outPath}`);
+  console.log(`  Open in browser to play instantly.`);
 }
 
 // ---------------------------------------------------------------------------
@@ -294,6 +316,7 @@ function cmdHelp(): void {
 \x1b[1mUsage:\x1b[0m
   vdsl compile <input.vdsl> [-o output.jsx] [--theme <name>]
   vdsl render  <input.vdsl> [-o output.mp4]  [--theme <name>]
+  vdsl play    <input.vdsl> [--theme <name>]
   vdsl preview <input.vdsl> [--theme <name>]
   vdsl themes
   vdsl init    <name>
@@ -302,6 +325,7 @@ function cmdHelp(): void {
   vdsl init my-explainer
   vdsl compile my-explainer.vdsl
   vdsl render  my-explainer.vdsl -o out.mp4 --theme dark-tech
+  vdsl play    my-explainer.vdsl
   vdsl preview my-explainer.vdsl
   vdsl themes
 `);
@@ -317,6 +341,7 @@ function main(): void {
   switch (command) {
     case "compile": return cmdCompile(positional, flags);
     case "render":  return cmdRender(positional, flags);
+    case "play":    return cmdPlay(positional, flags);
     case "preview": return cmdPreview(positional, flags);
     case "themes":  return cmdThemes();
     case "init":    return cmdInit(positional);

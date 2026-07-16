@@ -51,11 +51,11 @@ export const FadeText: React.FC<FadeTextProps> = ({
   const fadeOutStart = Math.max(0, duration - 12);
 
   const opacity = hasEnd
-    ? interpolate(localFrame, [0, 12, fadeOutStart, fadeOutStart + 12], [0, 1, 1, 0], {
+    ? interpolate(localFrame, [0, 6, fadeOutStart, fadeOutStart + 10], [0, 1, 1, 0], {
         extrapolateLeft: "clamp",
         extrapolateRight: "clamp",
       })
-    : interpolate(localFrame, [0, 12], [0, 1], {
+    : interpolate(localFrame, [0, 6], [0, 1], {
         extrapolateLeft: "clamp",
         extrapolateRight: "clamp",
       });

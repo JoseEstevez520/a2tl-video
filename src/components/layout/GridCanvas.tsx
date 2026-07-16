@@ -38,14 +38,14 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   children,
   cellSize = 48,
   hairlineOpacity = 0.18,
-  vignette = true,
+  vignette = false,
 }) => {
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
 
   const localFrame = frame - timing.start * fps;
 
-  const fadeIn = interpolate(localFrame, [0, 18], [0, 1], {
+  const fadeIn = interpolate(localFrame, [0, 6], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });

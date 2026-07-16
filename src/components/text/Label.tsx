@@ -43,7 +43,7 @@ export const Label: React.FC<LabelProps> = ({
 
   const localFrame = frame - timing.start * fps;
 
-  const opacity = interpolate(localFrame, [0, 8], [0, 1], {
+  const opacity = interpolate(localFrame, [0, 4], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });

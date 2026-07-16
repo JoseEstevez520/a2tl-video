@@ -6,6 +6,7 @@
 export { parseVDSL } from "./parser";
 export { compile } from "./compiler";
 export type { CompileOptions } from "./compiler";
+export { renderToHTML } from "./renderer";
 export { themes, resolveTheme, themeNames } from "./themes";
 export type { Theme } from "./themes";
 
