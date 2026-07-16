@@ -1,10 +1,15 @@
 // Layout
 export { GridCanvas } from "./layout/GridCanvas";
+export { Triptych } from "./layout/Triptych";
+export { StepSequence } from "./layout/StepSequence";
 
 // Text
 export { WordReveal } from "./text/WordReveal";
 export { TextCycle } from "./text/TextCycle";
 export { TypewriterText } from "./text/TypewriterText";
+export { FadeText } from "./text/FadeText";
+export { Label } from "./text/Label";
+export { Byline } from "./text/Byline";
 
 // Diagrams
 export { NodeGraph } from "./diagrams/NodeGraph";

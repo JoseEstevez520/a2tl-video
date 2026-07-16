@@ -64,13 +64,9 @@ export function compile(spec: VDSLSpec, options: CompileOptions = {}): string {
 
   // 2. Theme constant
   sections.push(`const theme = themes['${themeName}'];`);
-  sections.push(`const fps = ${spec.canvas ? 30 : 30};`);
 
   // 3. Main composition
   sections.push(buildComposition(spec, componentName));
-
-  // 4. Remotion root registration
-  sections.push(buildRoot(spec, componentName));
 
   return sections.join("\n\n") + "\n";
 }
@@ -144,6 +140,7 @@ function collectUsedComponents(spec: VDSLSpec): Set<string> {
             case "boundary-sim":    used.add("BoundarySim"); break;
             case "workspace":       used.add("WorkspaceDiagram"); break;
             case "protocol-compare":used.add("ProtocolCompare"); break;
+            case "trace-log":       used.add("TraceLog"); break;
             default:                used.add("NodeGraph"); // generic fallback
           }
           break;
@@ -403,13 +400,26 @@ function buildComparison(comp: ComparisonComponent): string {
     return `{ ${parts.join(", ")} }`;
   });
 
+  const left = comp.sides.find((s) => s.side === "left") ?? comp.sides[0];
+  const right = comp.sides.find((s) => s.side === "right") ?? (comp.sides[1] ?? comp.sides[0]);
+
+  const buildSide = (s: typeof left) => {
+    const parts = [
+      `title: "${escapeString(s.title)}"`,
+      `subtitle: "${escapeString(s.subtitle)}"`,
+    ];
+    if (s.badge) {
+      parts.push(`badge: { text: "${escapeString(s.badge.text)}", color: "${s.badge.color}" }`);
+    }
+    return `{ ${parts.join(", ")} }`;
+  };
+
   return [
     `<Comparison`,
     `  timing={${serializeValue(comp.timing as unknown as Record<string, unknown>)}}`,
     `  animation="${comp.animation}"`,
-    `  sides={[`,
-    sidesArr.map((s) => `    ${s},`).join("\n"),
-    `  ]}`,
+    `  left={${buildSide(left)}}`,
+    `  right={${buildSide(right)}}`,
     `  theme={theme}`,
     `/>`,
   ].join("\n");
@@ -535,6 +545,7 @@ function resolveVizComponent(vizType?: string): string {
     case "boundary-sim":     return "BoundarySim";
     case "workspace":        return "WorkspaceDiagram";
     case "protocol-compare": return "ProtocolCompare";
+    case "trace-log":        return "TraceLog";
     default:                 return "NodeGraph";
   }
 }

@@ -45,7 +45,8 @@ export type Position =
   | "center"
   | "upper-left"
   | "upper-right"
-  | "bottom-center";
+  | "bottom-center"
+  | "bottom-right";
 
 export type RevealStyle =
   | "fade"

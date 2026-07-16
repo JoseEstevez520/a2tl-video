@@ -36,17 +36,36 @@ scene "The Solution" 8s blur-crossfade
 | Reusable components | DIY | No | **12 rich components** |
 | Theming | Manual | Manual | **1 line** |
 
+## Pipeline
+
+```
+video.vdsl          (you write this — ~100 lines)
+    ↓ vdsl compile
+compiled JSX         (auto-generated Remotion component)
+    ↓ vdsl render
+video.mp4            (final output)
+```
+
 ## Quick Start
 
 ```bash
-# Install
-npm install vdsl remotion @remotion/cli react react-dom
+# Clone and build
+git clone https://github.com/JoseEstevez520/vdsl
+cd vdsl
+npm install && npm run build
 
-# Create a video
+# Install render project dependencies
+cd render && npm install && cd ..
+
+# Create a video from the example
+npx vdsl render examples/communication.vdsl -o communication.mp4
+
+# Or create your own
 npx vdsl init my-video
+npx vdsl render my-video.vdsl -o my-video.mp4
 
-# Edit my-video.vdsl, then render
-npx vdsl render my-video.vdsl -o video.mp4
+# Preview in Remotion Studio (interactive)
+npx vdsl preview my-video.vdsl
 ```
 
 ## The Two Levels

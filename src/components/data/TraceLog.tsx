@@ -54,6 +54,11 @@ export const TraceLog: React.FC<TraceLogProps> = ({
   entryStagger = 5,
   width = 880,
 }) => {
+  const normalizedColumns: string[] = !columns
+    ? []
+    : Array.isArray(columns)
+    ? columns
+    : String(columns).split(" ");
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -91,7 +96,7 @@ export const TraceLog: React.FC<TraceLogProps> = ({
   };
 
   // Calculate column widths
-  const numCols = columns ? columns.length : (entries[0]?.tokens.length ?? 1);
+  const numCols = normalizedColumns.length || (entries[0]?.tokens.length ?? 1);
   const colWidth = (width - PAD_H * 2) / numCols;
 
   return (
@@ -183,7 +188,7 @@ export const TraceLog: React.FC<TraceLogProps> = ({
         </div>
 
         {/* Column headers */}
-        {columns && (
+        {normalizedColumns.length > 0 && (
           <div
             style={{
               display: "flex",
@@ -192,7 +197,7 @@ export const TraceLog: React.FC<TraceLogProps> = ({
               background: `${theme.colors.bg}44`,
             }}
           >
-            {columns.map((col, ci) => (
+            {normalizedColumns.map((col, ci) => (
               <div
                 key={ci}
                 style={{

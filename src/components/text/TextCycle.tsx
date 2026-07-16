@@ -31,8 +31,9 @@ interface CycleItem {
 
 interface TextCycleProps {
   theme: Theme;
-  timing: { start: number; end?: number };
-  items: CycleItem[];
+  timing?: { start: number; end?: number };
+  items?: CycleItem[];
+  phrases?: CycleItem[];
   font?: "display" | "body" | "mono";
   fontSize?: number;
   align?: "left" | "center" | "right";
@@ -43,12 +44,14 @@ const STRIKE_DRAW_FRAMES = 16;
 
 export const TextCycle: React.FC<TextCycleProps> = ({
   theme,
-  timing,
-  items,
+  timing = { start: 0 },
+  items: rawItems,
+  phrases,
   font = "display",
   fontSize = 56,
   align = "center",
 }) => {
+  const items = phrases ?? rawItems ?? [];
   const frame = useCurrentFrame();
   const { fps, width } = useVideoConfig();
   const fontFamily = theme.fonts[font] ?? theme.fonts.display;

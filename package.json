@@ -4,6 +4,24 @@
   "description": "Video Description Language — describe videos, render beauty",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./components": {
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.js"
+    },
+    "./themes": {
+      "import": "./dist/themes/index.js",
+      "require": "./dist/themes/index.js"
+    },
+    "./parser": {
+      "import": "./dist/parser/index.js",
+      "require": "./dist/parser/index.js"
+    }
+  },
   "bin": {
     "vdsl": "dist/cli.js"
   },

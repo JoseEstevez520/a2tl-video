@@ -7,6 +7,7 @@
 
 import {
   tokenizeDocument,
+  tokenizeLine,
   parseTiming,
   isColor,
   type Token,
@@ -101,7 +102,7 @@ function extractTiming(
 
 /** Cast a string to Position with a fallback. */
 function asPosition(value: string): Position {
-  const valid: Position[] = ["center", "upper-left", "upper-right", "bottom-center"];
+  const valid: Position[] = ["center", "upper-left", "upper-right", "bottom-center", "bottom-right"];
   if ((valid as string[]).includes(value)) return value as Position;
   return "center"; // lenient fallback
 }
@@ -441,12 +442,222 @@ function parseTraceLog(
   };
 }
 
+function parseListItem(
+  itemContent: string,
+  childLines: TokenizedLine[],
+  parentIndent: number
+): unknown {
+  // Check for quoted strings first
+  if (itemContent.startsWith('"') || itemContent.startsWith("'")) {
+    const itemTokens = tokenizeLine(itemContent);
+    const quotedStrings = itemTokens.filter((t: Token) => t.kind === "string").map((t) => t.value);
+    if (quotedStrings.length > 1) {
+      return { tokens: quotedStrings };
+    }
+    if (quotedStrings.length === 1) {
+      return quotedStrings[0];
+    }
+    return itemContent;
+  }
+
+  // Parse inline properties (key: value pairs)
+  const parsedInline = parseInlineProperties(itemContent);
+
+  // Parse children
+  let parsedChildren: Record<string, unknown> = {};
+  if (childLines.length > 0) {
+    const childResult = parseStructuredChildren(childLines, parentIndent);
+    if (typeof childResult === "object" && childResult !== null && !Array.isArray(childResult)) {
+      parsedChildren = childResult as Record<string, unknown>;
+    }
+  }
+
+  if (Object.keys(parsedInline).length > 0 || Object.keys(parsedChildren).length > 0) {
+    return { ...parsedInline, ...parsedChildren };
+  }
+
+  return itemContent;
+}
+
+function parseInlineProperties(content: string): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  // Walk through content manually, parsing key: value pairs
+  // respecting quoted strings as atomic units
+  let i = 0;
+  while (i < content.length) {
+    // Skip whitespace
+    if (content[i] === " " || content[i] === "\t") { i++; continue; }
+
+    // Read key (alphanumeric, underscore, hyphen)
+    let key = "";
+    while (i < content.length && /[a-zA-Z0-9_-]/.test(content[i])) {
+      key += content[i]; i++;
+    }
+
+    // Expect colon
+    if (i < content.length && content[i] === ":") {
+      i++; // skip colon
+    } else {
+      if (key) i += key.length; // skip what we consumed
+      else i++;
+      continue;
+    }
+
+    // Skip whitespace after colon
+    while (i < content.length && (content[i] === " " || content[i] === "\t")) i++;
+
+    // Read value
+    if (i < content.length && content[i] === '"') {
+      // Quoted string
+      i++; // skip opening quote
+      let val = "";
+      while (i < content.length && content[i] !== '"') {
+        if (content[i] === "\\" && i + 1 < content.length) {
+          val += content[i + 1]; i += 2;
+        } else {
+          val += content[i]; i++;
+        }
+      }
+      i++; // skip closing quote
+      result[key] = val;
+    } else if (content[i] === "[" || content[i] === "{") {
+      // Bracketed value: read until matching close
+      const open = content[i];
+      const close = open === "[" ? "]" : "}";
+      i++;
+      let val = open;
+      let depth = 1;
+      while (i < content.length && depth > 0) {
+        if (content[i] === open) depth++;
+        if (content[i] === close) depth--;
+        val += content[i]; i++;
+      }
+      result[key] = val;
+    } else {
+      // Unquoted value: read until next space or end
+      let val = "";
+      while (i < content.length && content[i] !== " " && content[i] !== "\t") {
+        val += content[i]; i++;
+      }
+      if (val !== "") {
+        result[key] = parseInlineValue(val);
+      }
+    }
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Structured viz parser (YAML-like)
+// ---------------------------------------------------------------------------
+
+/** Parse a colon-terminated key with indented children as structured value */
+function parseStructuredChildren(lines: TokenizedLine[], parentIndent: number): unknown {
+  if (lines.length === 0) return "";
+
+  // All lines at same indent level as first child
+  const firstIndent = lines[0].indent;
+
+  // Check if this is a list (first line starts with `-`)
+  const firstTrimmed = lines[0].raw.trim();
+  const isList = firstTrimmed.startsWith("- ");
+  const isListItem = firstTrimmed.startsWith("- ");
+
+  if (isListItem) {
+    const items: unknown[] = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const trimmed = line.raw.trim();
+      if (!trimmed.startsWith("- ")) { i++; continue; }
+
+      const itemContent = trimmed.slice(2).trim();
+      const childLines: TokenizedLine[] = [];
+      let j = i + 1;
+      while (j < lines.length && lines[j].indent > line.indent) {
+        childLines.push(lines[j]); j++;
+      }
+
+      items.push(parseListItem(itemContent, childLines, line.indent));
+      i = j;
+    }
+    return items;
+  }
+
+  // Not a list — check for key:value pairs at this level
+  const result: Record<string, unknown> = {};
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const raw = line.raw.trim();
+    const colonIdx = raw.indexOf(":");
+
+    if (colonIdx === -1) {
+      // No colon — store as raw tokens
+      result[`_line${line.lineNumber}`] = line.tokens.map(tokenValue);
+      i++;
+      continue;
+    }
+
+    const key = raw.slice(0, colonIdx).trim();
+    const rest = raw.slice(colonIdx + 1).trim();
+
+    if (rest === "") {
+      // Key with children on subsequent indented lines
+      const childLines: TokenizedLine[] = [];
+      let j = i + 1;
+      while (j < lines.length && lines[j].indent > line.indent) {
+        childLines.push(lines[j]); j++;
+      }
+      if (childLines.length > 0) {
+        result[key] = parseStructuredChildren(childLines, line.indent);
+      } else {
+        result[key] = "";
+      }
+      i = j;
+    } else {
+      // Check if rest contains more key:value pairs at this level
+      if (rest.includes(":")) {
+        const parsedAll = parseInlineProperties(raw);
+        if (Object.keys(parsedAll).length > 0) {
+          Object.assign(result, parsedAll);
+          i++;
+          continue;
+        }
+      }
+      result[key] = parseInlineValue(rest);
+      i++;
+    }
+  }
+
+  // If result only has one key and it's a list, collapse
+  const keys = Object.keys(result);
+  if (keys.length === 0) return result;
+  return result;
+}
+
+
+
+/** Parse a single inline value (string, number, boolean) */
+function parseInlineValue(raw: string): unknown {
+  if (raw.startsWith('"') && raw.endsWith('"') && raw.length >= 2) {
+    return raw.slice(1, -1);
+  }
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  const num = Number(raw);
+  if (!isNaN(num) && raw !== "") return num;
+  return raw;
+}
+
 /**
  * viz <timing> <reveal>
  *   type: <vizType>
  *   <key>: <value>
- *   <key>: <value>
- *   …
+ *   <key>:
+ *     <subkey>: <value>
+ *   - item
+ *   - key: value
  */
 function parseViz(
   tokens: Token[],
@@ -459,25 +670,16 @@ function parseViz(
   let vizType: VizType | undefined;
   const props: Record<string, unknown> = {};
 
-  for (const child of children) {
-    // Child lines may look like `key: value` or `key: "value"`
-    const raw = child.raw.trim();
-    const colonIdx = raw.indexOf(":");
-    if (colonIdx !== -1) {
-      const key = raw.slice(0, colonIdx).trim();
-      const rest = raw.slice(colonIdx + 1).trim();
-      // Parse rest as a single token value
-      const value =
-        rest.startsWith('"') ? rest.slice(1, rest.lastIndexOf('"')) : rest;
-
-      if (key === "type") {
-        vizType = value as VizType;
-      } else {
-        props[key] = value;
+  if (children.length > 0) {
+    const structured = parseStructuredChildren(children, children[0].indent);
+    if (typeof structured === "object" && structured !== null && !Array.isArray(structured)) {
+      for (const [k, v] of Object.entries(structured as Record<string, unknown>)) {
+        if (k === "type") {
+          vizType = String(v) as VizType;
+        } else {
+          props[k] = v;
+        }
       }
-    } else {
-      // No colon — store raw tokens under an index key
-      props[`_line${child.lineNumber}`] = child.tokens.map(tokenValue);
     }
   }
 
