@@ -1,14 +1,11 @@
-# A2TL-Video — Agent to Transformation Language for Video
+# A2TL-Video
 
-**Describe videos in 12–98 lines. Play them instantly in the browser or render professional MP4s.**
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![npm version](https://img.shields.io/npm/v/a2tl-video.svg)](https://www.npmjs.com/package/a2tl-video)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/JoseEstevez520/a2tl-video/ci.yml?branch=main)](https://github.com/JoseEstevez520/a2tl-video/actions)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-A2TL-Video is a compact, declarative language for describing explainer videos. You write *what* to show. The renderer decides *how* to animate it — with rich SVG diagrams, smooth transitions, and professional typography. Preview instantly with a self-contained web player, or render to MP4 via Remotion.
-
-A2TL-Video is part of the **A2TL** (Agent to Transformation Language) family — a set of compact formats where AI agents describe *what* to show and a renderer decides *how*:
-- **a2tl-web** — generates web pages
-- **a2tl-video** (this project) — generates videos
-
-The format version identifier is `VDSL/1` (the first line of every `.vdsl` file). File extension: `.vdsl`.
+**Describe a video in 12 lines. Get a professional MP4 or instant browser playback.**
 
 ```
 VDSL/1
@@ -29,138 +26,106 @@ scene "The Solution" 8s blur-crossfade
     connectors: arrow
 ```
 
-**48–66% fewer tokens than equivalent Remotion JSX, 94–98% fewer than raw HTML.** Same visual quality. Measured with tiktoken (GPT-4o tokenizer).
+Part of **A2TL** (Agent to Transformation Language). See also [a2tl-web](https://github.com/JoseEstevez520/a2tl-web) for web pages.
 
-## Why A2TL-Video
+---
 
-| | Direct Remotion JSX | Equivalent HTML player | A2TL-Video |
-|---|---|---|---|
-| Lines for a 74s video | 238 | — | **98** |
-| Tokens (measured) | 2,257 | 21,305 | **1,173** |
-| Token savings | — | — | **48% vs JSX, 94% vs HTML** |
-| Visual quality | Manual | Manual | **Built-in** |
-| Agent-friendly | No | No | **Yes** |
-| Reusable components | DIY | No | **12 rich components** |
-| Theming | Manual | Manual | **1 line** |
+## Why VDSL
 
-Token counts measured with tiktoken (cl100k_base). A simpler 13s video (hello-world) uses just 168 tokens (66% savings vs JSX).
+An AI agent writes a simple `.vdsl` spec. The renderer handles animation, layout, and typography.
 
-## Pipeline
+| Metric (74s video) | VDSL | Remotion JSX | HTML player |
+|---|---:|---:|---:|
+| Tokens (tiktoken) | **1,173** | 2,257 | 21,305 |
+| Savings vs VDSL | -- | +48% | +94% |
 
-```
-video.vdsl          (you write this — 12 to 98 lines)
-    ↓ vdsl compile
-compiled JSX         (auto-generated Remotion component)
-    ↓ vdsl render
-video.mp4            (final output)
-```
+A simpler 13s video: **168 tokens** VDSL vs 501 JSX (66% savings) vs 10,968 HTML (98% savings).
+
+**What you get:**
+
+- **Agent writes spec, gets pro video** -- declarative format, no design decisions
+- **Zero-dependency web playback** -- self-contained HTML, no render step needed
+- **Error-proof format** -- constrained and declarative; the agent cannot break it
+- **4 themes, 12 components** -- inline `palette`/`font` overrides in the header
+- **Embeddable** -- `<vdsl-player>` web component and React `<A2TLVideoPlayer>`
 
 ## Quick Start
 
 ```bash
-# Clone and build
 git clone https://github.com/JoseEstevez520/a2tl-video
 cd a2tl-video
 npm install && npm run build
-
-# Install render project dependencies
 cd render && npm install && cd ..
 
-# Create a video from the example
+# Render an example to MP4
 npx vdsl render examples/communication.vdsl -o communication.mp4
 
-# Or create your own
-npx vdsl init my-video
-npx vdsl render my-video.vdsl -o my-video.mp4
-
-# Preview in Remotion Studio (interactive)
-npx vdsl preview my-video.vdsl
+# Or generate a self-contained HTML player (instant, no Remotion)
+npx vdsl play examples/hello-world.vdsl
 ```
 
-## The Two Levels
-
-A2TL-Video uses a hybrid approach inspired by [Generative UI research](https://github.com/ANFAIA/SkillNet):
-
-**Level 2 (Predefined) — 80% of the video.** Text reveals, transitions, layouts, themes. Quality is guaranteed by the renderer. Zero design decisions needed.
-
-**Level 3 (Generative) — 20% of the video.** The `viz` block lets you describe custom diagrams, charts, and visualizations with structured data. The renderer has built-in support for common viz types and an escape hatch for custom SVG.
+## Pipeline
 
 ```
-// Level 2: predefined animation, always looks good
-text "Hello World" hero center word-stagger 0-3s
-
-// Level 3: structured data → rich animated diagram  
-viz 2-8s build-up
-  type: node-graph
-  nodes:
-    - id: a label: "Agent A" x: 30 y: 50 color: blue
-    - id: b label: "Agent B" x: 70 y: 50 color: green
-  edges:
-    - from: a to: b style: dashed animate: draw
+video.vdsl       you write this (12-98 lines, 168-1,173 tokens)
+    |  vdsl compile
+compiled JSX     auto-generated Remotion component
+    |  vdsl render
+video.mp4        professional output
 ```
 
-## Components
+Or skip MP4 entirely: `vdsl play` produces a self-contained HTML file that plays in any browser.
 
-### Text (Level 2)
+## Format Reference
 
-| Component | What it does |
-|---|---|
-| `text` | Text with reveal animation (fade, word-stagger, typewriter, slide-up) |
-| `text-cycle` | Phrases that hard-cut between each other with accents |
-| `label` | Small positioned label/tag |
-| `icon` | Inline SVG icon from the bundled Lucide set — `icon "<name>" <position> <timing> [color]` |
-| `code` | Monospace code with typewriter effect |
-| `byline` | Credit/attribution |
+Format identifier: `VDSL/1`. File extension: `.vdsl`. Full spec: [docs/spec.md](docs/spec.md).
 
-Icons are drawn from a curated, offline subset of [Lucide](https://lucide.dev)
-(~280 icons, inline SVG). They can stand alone (`icon "rocket" center 0-5s purple`)
-or fill a composite's badge -- a `flow-diagram`/`step-sequence` step whose
-`icon:` value names a known icon shows that icon instead of a number (plain
-numbers still render as numerals). An unknown name degrades to a neutral chip.
-Each generated HTML inlines ONLY the icons that video uses. See `NOTICE` for the
-Lucide ISC license; the set is generated by `tools/gen-icons.js` into
-`src/icons/lucide.ts`.
+### Components
 
-### Structure (Level 2)
+**Text (Level 2 -- predefined, always looks good)**
 
-| Component | What it does |
-|---|---|
-| `triptych` | Three items in a row with stagger reveal |
-| `step-sequence` | Numbered steps that cycle (1. TITLE / description) |
-| `comparison` | Side-by-side cards with split-tilt 3D entry |
-| `card` | Centered card with formula/content |
+`text` -- reveal animations (fade, word-stagger, typewriter, slide-up) |
+`text-cycle` -- phrases with hard-cut transitions |
+`label` -- positioned tag |
+`icon` -- inline SVG from bundled Lucide set (~280 icons) |
+`code` -- monospace with typewriter effect |
+`byline` -- credit/attribution
 
-### Visualizations (Level 3 — `viz` block)
+**Structure (Level 2)**
 
-| Type | What it renders |
-|---|---|
-| `node-graph` | SVG node-edge diagram with animated reveal |
-| `flow-diagram` | Connected steps with arrow paths |
-| `boundary-sim` | Data packets flowing through PASS/BLOCK gates |
-| `workspace` | Shared/private zones with labels |
-| `protocol-compare` | Protocol comparison table with badges |
-| `trace-log` | Terminal-style log entries accumulating |
-| `custom` | Raw SVG with `data-animate` hints |
+`triptych` -- three items in a row |
+`step-sequence` -- numbered cycling steps |
+`comparison` -- side-by-side cards with 3D entry |
+`card` -- centered card with content
+
+**Visualizations (Level 3 -- structured data, rich animated output)**
+
+`node-graph` | `flow-diagram` | `boundary-sim` | `workspace` | `protocol-compare` | `trace-log` | `custom` (raw SVG)
+
+### Scene transitions
+
+`cut` | `crossfade` | `blur-crossfade` | `push-right` | `push-left` | `push-up` | `zoom-through`
+
+### Timing
+
+```
+0-5s      start at 0s, end at 5s
+3.2s      appear at 3.2s
+0.5-9s    start at 0.5s, end at 9s
+```
 
 ## Themes
 
-Four built-in themes. Add your own as a JSON file.
+One line changes the entire look: `theme dark-tech`
 
 | Theme | Style |
 |---|---|
-| `clean` | White background, neutral ink, system fonts, no grid — the universal default |
-| `cobalt-grid` | Warm cream paper, electric cobalt ink, graph-paper grid, Newsreader serif |
-| `dark-tech` | Near-black background, cyan accent, Inter sans-serif |
-| `warm-editorial` | Ivory background, warm dark ink, Playfair Display serif |
+| `clean` | White background, neutral ink, system fonts |
+| `cobalt-grid` | Cream paper, cobalt ink, graph-paper grid, serif |
+| `dark-tech` | Near-black, cyan accent, sans-serif |
+| `warm-editorial` | Ivory, warm dark ink, serif |
 
-```
-VDSL/1
-theme dark-tech      ← one line changes the entire look
-```
-
-### Inline overrides (`palette` / `font`)
-
-Re-skin a video without a separate theme file: add a `palette` and/or `font` directive in the header. They override the base `theme` in place.
+Override inline without a separate file:
 
 ```
 VDSL/1
@@ -169,167 +134,36 @@ palette bg:#0d0f1a ink:#ff4d6d
 font display:"Playfair Display"
 ```
 
-That's it — a couple of header lines re-skin the whole video. The knob set is small on purpose (VDSL's edge is brevity):
+## Embedding
 
-- **palette keys**: `bg`, `bg2`, `ink`, `inkSoft`, `inkFaint`, `grid`, `green`, `red`, `amber`, `purple`
-- **font keys**: `display`, `body`, `mono`
-
-Set `ink` alone and its relatives (`inkSoft`, `inkFaint`, `grid`) are auto-derived from it by alpha, so one colour re-tunes the whole ink family. Anything you don't set falls through to the base theme.
-
-### Custom themes
-
-```json
-{
-  "name": "my-brand",
-  "colors": {
-    "bg": "#ffffff",
-    "bg2": "#f5f5f5",
-    "ink": "#1a1a2e",
-    "inkSoft": "#4a4a6a",
-    "inkFaint": "rgba(26,26,46,0.15)",
-    "grid": "rgba(26,26,46,0.05)",
-    "green": "#059669",
-    "red": "#dc2626",
-    "amber": "#F59E0B",
-    "purple": "#8B5CF6"
-  },
-  "fonts": {
-    "display": "'Plus Jakarta Sans', sans-serif",
-    "body": "'Inter', sans-serif",
-    "mono": "'Fira Code', monospace"
-  },
-  "grid": false
-}
-```
-
-## Web Player & Embedding
-
-You don't need an MP4 render to see (or ship) an A2TL-Video. `vdsl play` produces a **self-contained HTML player** that plays instantly in any browser — no Remotion, no render step, no external assets.
-
-```bash
-# video.vdsl → video.html (a single, self-contained file)
-npx vdsl play video.vdsl
-
-# with a different theme
-npx vdsl play video.vdsl --theme dark-tech
-```
-
-Open the file and it plays: the fixed 1920×1080 stage auto-fits and centres itself in the viewport, with play/pause and a scrub bar. The renderer draws the real components (viz, cards, trace-logs, text reveals), scene transitions, and ambient motion — the same visual language as the MP4 path.
-
-### Embed in any page
-
-Drop the `<vdsl-player>` web component (`embed/vdsl-player.js`) into a page. It hosts the player in a style-isolated `<iframe>`, so nothing leaks in or out.
+### Web component
 
 ```html
 <script src="embed/vdsl-player.js"></script>
-
-<!-- point at a generated player .html -->
 <vdsl-player src="video.html" ratio="16/9" autoplay></vdsl-player>
 ```
 
-**Attributes:** `src` (URL of a generated player HTML), `srcdoc` (full player HTML inline), `ratio` (aspect ratio, default `16/9`), `autoplay` (press play once ready), `maxwidth` (CSS max-width, default `100%`). You can also set the full HTML from JS via the `.html` property (e.g. HTML your backend returns).
+Attributes: `src`, `srcdoc`, `ratio` (default `16/9`), `autoplay`, `maxwidth` (default `100%`).
 
-### Programmatic control
+### Programmatic API
 
-The player exposes `window.vdslPlayer` inside the frame — handy for embedding, custom controls, or headless screenshots:
+The player exposes `window.vdslPlayer` inside the frame:
 
-| Member | What it does |
-|---|---|
-| `play()` / `pause()` | Start / stop playback |
-| `seek(frame)` | Jump to an absolute frame |
-| `seekTime(seconds)` | Jump to a time in seconds |
-| `frame` | Current frame (getter) |
-| `fps` | Frames per second (getter) |
-| `totalFrames` | Total frame count (getter) |
-
-From the component, reach it via the element's `.player` getter (e.g. `document.querySelector('vdsl-player').player.seekTime(3)`).
+`play()` | `pause()` | `seek(frame)` | `seekTime(seconds)` | `frame` | `fps` | `totalFrames`
 
 ## CLI
 
 ```bash
-# Compile VDSL to a Remotion composition
-npx vdsl compile video.vdsl -o composition.jsx
-
-# Compile and render to MP4
-npx vdsl render video.vdsl -o output.mp4
-
-# Render with a different theme
-npx vdsl render video.vdsl -o output.mp4 --theme dark-tech
-
-# Generate a self-contained HTML player (plays instantly, no MP4)
-npx vdsl play video.vdsl
-
-# List available themes
-npx vdsl themes
-
-# Create a new VDSL file from template
-npx vdsl init my-explainer
+npx vdsl compile video.vdsl -o composition.jsx   # VDSL -> Remotion JSX
+npx vdsl render  video.vdsl -o output.mp4         # VDSL -> MP4
+npx vdsl play    video.vdsl                       # VDSL -> self-contained HTML
+npx vdsl preview video.vdsl                       # open in Remotion Studio
+npx vdsl themes                                   # list available themes
+npx vdsl init    my-explainer                     # scaffold a new .vdsl file
 ```
-
-## A2TL-Video Format Reference
-
-See [docs/spec.md](docs/spec.md) for the complete format specification.
-
-### Timing syntax
-
-```
-0-5s        → starts at 0s, ends at 5s
-3.2s        → appears at 3.2s
-0.5-9s      → starts at 0.5s, ends at 9s
-```
-
-### Scene transitions
-
-`cut` | `crossfade` | `blur-crossfade` | `push-right` | `push-left` | `push-up` | `zoom-through`
-
-### Text reveals
-
-`fade` | `word-stagger` | `typewriter` | `slide-up` | `scale-in` | `none`
-
-### Text accents
-
-`underline` | `strike` | `hero` | `dim` | `glow`
-
-## Architecture
-
-```
-video.vdsl          (you write this — 130 to 1,173 tokens)
-    ↓ parser
-JSON spec           (intermediate representation)
-    ↓ compiler
-Remotion JSX        (generated — 65 to 238 lines)
-    ↓ remotion render
-video.mp4           (professional output)
-```
-
-The parser and compiler are deterministic — no LLM involved. All the visual quality comes from the **12 built-in Remotion components** that handle animation, layout, and theming.
-
-## For AI Agents
-
-A2TL-Video is designed to be generated by AI agents. An agent reads documentation/content and produces a `.vdsl` file. Compare (74s video, measured with tiktoken):
-
-| What the agent writes | Tokens | Lines |
-|---|---|---|
-| Full Remotion JSX | 2,257 | 238 |
-| Equivalent HTML player | 21,305 | — |
-| **A2TL-Video spec** | **1,173** | **98** |
-
-For simpler videos (13s, 3 scenes), the spec is just 168 tokens / 18 lines.
-
-The agent describes *what* to show. The renderer handles the *how*.
-
-## Extensibility
-
-A2TL-Video is designed to be customized per project:
-
-- **Themes**: Add a JSON file → new visual identity
-- **Viz types**: Register new `viz` handlers in the component registry
-- **Fonts**: Reference any Google Font in your theme config
 
 ## License
 
-MIT
+MIT -- see [LICENSE](LICENSE).
 
-## Credits
-
-Built on [Remotion](https://remotion.dev). Part of the [A2TL](https://github.com/JoseEstevez520) family alongside [a2tl-web](https://github.com/JoseEstevez520/a2tl-web) (formerly UIDL) — the same philosophy applied to video.
+Built on [Remotion](https://remotion.dev).
