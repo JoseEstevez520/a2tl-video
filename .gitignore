@@ -16,3 +16,4 @@ FUTURE.md
 # Screenshot harness (dev-only; gen-icons.js is kept)
 tools/shoot.js
 tools/shoot-embed.js
+*.jsx
