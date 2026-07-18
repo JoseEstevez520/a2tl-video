@@ -60,6 +60,8 @@
   },
   "homepage": "https://github.com/JoseEstevez520/vdsl#readme",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "lucide-static": "^1.25.0",
     "react-dom": "^19.2.7"
   }
 }

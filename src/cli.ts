@@ -306,6 +306,19 @@ function cmdPlay(positional: string[], flags: Record<string, string | boolean>):
 }
 
 // ---------------------------------------------------------------------------
+// Command: mcp (start the MCP stdio server — web-first)
+// ---------------------------------------------------------------------------
+
+function cmdMcp(): void {
+  // Lazy import so the SDK only loads when the server is actually started.
+  const { startMcpServer } = require("./mcp") as typeof import("./mcp");
+  startMcpServer().catch((err: unknown) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Help
 // ---------------------------------------------------------------------------
 
@@ -320,6 +333,7 @@ function cmdHelp(): void {
   vdsl preview <input.vdsl> [--theme <name>]
   vdsl themes
   vdsl init    <name>
+  vdsl mcp
 
 \x1b[1mExamples:\x1b[0m
   vdsl init my-explainer
@@ -345,6 +359,7 @@ function main(): void {
     case "preview": return cmdPreview(positional, flags);
     case "themes":  return cmdThemes();
     case "init":    return cmdInit(positional);
+    case "mcp":     return cmdMcp();
     case "help":
     case "--help":
     case "-h":
