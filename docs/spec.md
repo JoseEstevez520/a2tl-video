@@ -101,7 +101,7 @@ Para diagramas y gráficas que no caben en los primitivos:
 
 ```
 viz <timing> <reveal>
-  type: <node-graph | flow-diagram | venn | boundary-sim | custom>
+  type: <node-graph | flow-diagram | boundary-sim | workspace | protocol-compare | trace-log | custom>
   """
   <SVG o descripción estructurada>
   """
@@ -161,6 +161,15 @@ viz 0-9s build-up
     - side: right label: "PRIVADO B" tag: "etiqueta: B"
 ```
 
+**protocol-compare**: Tabla comparativa de protocolos con badges AUTH/DATA (✓/✕)
+```
+viz 0-8s stagger
+  type: protocol-compare
+  protocols:
+    - name: "HTTP" auth: no data: no
+    - name: "mTLS" auth: yes data: yes
+```
+
 **custom**: SVG directo (Level 3 puro)
 ```
 viz 0-5s fade
@@ -193,6 +202,50 @@ Cada tema define: paleta, tipografía, fondo, hairlines, componentes base.
 - warm-editorial: fondo marfil, serif clásica, EB Garamond + Inter
 - (extensible: tema = archivo JSON con tokens)
 
+## Personalización inline: `palette` / `font`
+
+Re-skinear un vídeo sin archivo de tema aparte: en la cabecera, tras `theme`, añade directivas `palette` y/o `font`. Sobrescriben el tema base en el sitio.
+
+```
+VDSL/1
+theme dark-tech
+palette bg:#0d0f1a ink:#ff4d6d
+font display:"Playfair Display"
+```
+
+Un par de líneas en la cabecera reskin todo el vídeo. El conjunto de knobs es pequeño a propósito (la ventaja de VDSL es la brevedad):
+
+- **claves palette**: `bg`, `bg2`, `ink`, `inkSoft`, `inkFaint`, `grid`, `green`, `red`, `amber`, `purple`
+- **claves font**: `display`, `body`, `mono`
+
+Si defines `ink` solo, sus derivados (`inkSoft`, `inkFaint`, `grid`) se calculan a partir de él por alpha, así un único color re-afina toda la familia de tinta. Lo que no toques cae al tema base.
+
+## Reproductor web y embebido
+
+No hace falta renderizar a MP4 para ver (o publicar) un vídeo VDSL. `vdsl play <archivo>` genera un **reproductor HTML autocontenido** que se reproduce al instante en el navegador — sin Remotion, sin paso de render, sin recursos externos.
+
+```
+vdsl play video.vdsl            → video.html (un solo archivo, autocontenido)
+vdsl play video.vdsl --theme dark-tech
+```
+
+El escenario fijo 1920×1080 se auto-ajusta y centra en el viewport, con play/pausa y barra de scrub. Dibuja los componentes reales (viz, card, trace-log, reveals de texto), las transiciones entre escenas y micro-movimiento ambiental — el mismo lenguaje visual que la ruta MP4.
+
+### Embeber con `<vdsl-player>`
+
+El web component `embed/vdsl-player.js` aloja el reproductor en un `<iframe>` con estilos aislados (nada se filtra dentro ni fuera):
+
+```html
+<script src="embed/vdsl-player.js"></script>
+<vdsl-player src="video.html" ratio="16/9" autoplay></vdsl-player>
+```
+
+Atributos: `src` (URL de un .html generado), `srcdoc` (HTML del reproductor inline), `ratio` (por defecto `16/9`), `autoplay`, `maxwidth` (por defecto `100%`). También puedes fijar el HTML completo desde JS con la propiedad `.html`.
+
+### API de control programático
+
+Dentro del frame, `window.vdslPlayer` expone: `play()`, `pause()`, `seek(frame)`, `seekTime(segundos)`, y los getters `frame`, `fps`, `totalFrames`. Desde el componente se accede vía el getter `.player` del elemento.
+
 ## Medición estimada
 
 | Formato | Tokens | Ratio | Ahorro |
@@ -205,5 +258,6 @@ Cada tema define: paleta, tipografía, fondo, hairlines, componentes base.
 ## Pipeline
 
 ```
-contenido.md → (agente, ~400 tokens) → video.vdsl → (parser) → JSON → (renderer Remotion) → MP4
+contenido.md → (agente, ~400 tokens) → video.vdsl → (parser) → JSON ─┬→ (renderer web) → HTML autocontenido (vdsl play)
+                                                                     └→ (compiler Remotion) → MP4 (vdsl render)
 ```
