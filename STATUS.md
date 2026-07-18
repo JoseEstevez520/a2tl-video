@@ -6,7 +6,7 @@
 - **Compiler**: JSON spec → Remotion JSX. Funcional. Genera codigo importable desde `vdsl/components`.
 - **CLI** (`vdsl`): `init`, `compile`, `render`, `preview` (Remotion Studio), `play` (HTML).
 - **17 componentes Remotion**: GridCanvas, WordReveal, TextCycle, TypewriterText, FadeText, Label, Byline, Triptych, StepSequence, NodeGraph, FlowDiagram, BoundarySim, WorkspaceDiagram, Comparison, TraceLog, ProtocolCompare, FormulaCard.
-- **3 temas**: cobalt-grid, dark-tech, warm-editorial.
+- **4 temas**: clean, cobalt-grid, dark-tech, warm-editorial.
 - **Web renderer**: Generates standalone HTML with JS runtime for instant browser playback.
 - **Render project**: Proyecto Remotion local para `vdsl render` (MP4 via Chromium).
 

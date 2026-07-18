@@ -23,7 +23,7 @@ src/
     diagrams/         — NodeGraph, FlowDiagram, BoundarySim, WorkspaceDiagram, Comparison
     data/             — TraceLog, ProtocolCompare, FormulaCard
     index.ts          — Barrel exports
-  themes/             — 3 temas (cobalt-grid, dark-tech, warm-editorial)
+  themes/             — 4 temas (clean, cobalt-grid, dark-tech, warm-editorial)
   renderer/           — Web renderer (VDSL → HTML playback)
     index.ts          — renderToHTML()
 render/               — Proyecto Remotion local para MP4 rendering
@@ -41,7 +41,7 @@ STATUS.md             — Estado actual, problemas, vision
 ## Estado actual
 
 - Parser, compiler, CLI funcionales
-- 17 componentes, 3 temas
+- 17 componentes, 4 temas
 - Render a MP4 via Remotion funciona pero es lento (2-3 min para 74s)
 - Web renderer (HTML) existe pero tiene bugs de posicion y timing
 - README actualizado
@@ -59,13 +59,13 @@ Para SkillNet: usuario pide video → backend genera VDSL (IA) → frontend repr
 ## Proxima iteracion
 
 1. Debuggear web renderer (posiciones, timings, overlapping)
-2. Empaquetar como React component `<VDSLPlayer>` 
-3. Probar MediaRecorder para captura a MP4 en cliente
-4. Decidir si el MP4 se genera en cliente o servidor
+2. Probar MediaRecorder para captura a MP4 en cliente
+3. Decidir si el MP4 se genera en cliente o servidor
 
 ## Notas
 
 - No personalizar para SkillNet (A2TL-Video es generico)
 - No audio/TTS por ahora
-- No MCP server
+- React component `<A2TLVideoPlayer>` ya existe en `src/react/`
+- MCP server ya existe en `src/mcp/` (comando `vdsl mcp`)
 - Funcional > bonito en esta fase

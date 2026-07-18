@@ -187,7 +187,9 @@ viz 0-5s fade
 ## Animaciones predefinidas
 
 ### Reveals (entrada de elementos)
-fade | word-stagger | typewriter | slide-up | slide-left | scale-in | split-tilt | stagger | build-up | none
+fade | word-stagger | typewriter | slide-up | scale-in | none
+
+Algunos componentes usan animaciones propias: `split-tilt` (comparison), `stagger` (triptych), `build-up` (viz/composites).
 
 ### Transiciones entre escenas
 cut | crossfade | blur-crossfade | push-right | push-left | push-up | zoom-through
@@ -199,6 +201,7 @@ underline | strike | hero | dim | glow
 
 Cada tema define: paleta, tipografía, fondo, hairlines, componentes base.
 
+- clean: fondo blanco, tinta neutral, fuentes del sistema, sin grid — el default universal
 - cobalt-grid: papel crema, tinta cobalto, cuadrícula, Newsreader + Hanken Grotesk + DM Mono
 - dark-tech: fondo oscuro, acento cyan, Inter + JetBrains Mono
 - warm-editorial: fondo marfil, serif clásica, EB Garamond + Inter
