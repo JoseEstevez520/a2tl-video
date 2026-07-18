@@ -114,6 +114,16 @@ export interface LabelComponent {
   timing: Timing;
 }
 
+/** `icon "<name>" <position> <timing> [color]` — renders an inline SVG icon. */
+export interface IconComponent {
+  type: "icon";
+  name: string;
+  position: Position;
+  timing: Timing;
+  /** Optional trailing colour token (named palette / theme / raw css colour). */
+  color?: string;
+}
+
 /** A single item inside a `triptych` block. */
 export interface TriptychItem {
   /** Raw token list for the item line; structure varies by usage. */
@@ -133,6 +143,9 @@ export interface StepSequenceItem {
   /** e.g. "1. TITLE" */
   label: string;
   description: string;
+  /** Optional leading bare icon token (e.g. `rocket "Launch" "desc"`); when it
+   *  resolves to a known icon the badge shows that icon instead of the number. */
+  icon?: string;
 }
 
 /** `step-sequence <timing>` with indented steps */
@@ -163,7 +176,8 @@ export type CardChild =
   | { type: "formula"; content: string }
   | { type: "arrow"; direction?: string }
   | { type: "result"; content: string }
-  | { type: "subtitle"; content: string };
+  | { type: "subtitle"; content: string }
+  | { type: "icon"; name: string };
 
 /** `card <position> <reveal> <timing>` */
 export interface CardComponent {
@@ -230,6 +244,7 @@ export type Component =
   | TextComponent
   | TextCycleComponent
   | LabelComponent
+  | IconComponent
   | TriptychComponent
   | StepSequenceComponent
   | ComparisonComponent
@@ -250,9 +265,20 @@ export interface Scene {
   components: Component[];
 }
 
+/** Optional inline theme tweaks from the header (`palette` / `font` lines).
+ *  Kept deliberately small: override a base theme's key colours/fonts without a
+ *  separate theme file, so a couple of header lines re-skin the whole video. */
+export interface ThemeOverride {
+  colors?: Partial<Theme["colors"]>;
+  fonts?: Partial<Theme["fonts"]>;
+  grid?: boolean;
+}
+
 export interface VDSLSpec {
   version: number;
   theme: string;
   canvas: { width: number; height: number };
   scenes: Scene[];
+  /** Inline overrides applied on top of the resolved base theme. */
+  themeOverride?: ThemeOverride;
 }

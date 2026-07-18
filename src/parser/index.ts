@@ -32,6 +32,7 @@ import type {
   TraceLogEntry,
   VizType,
   CodeModifier,
+  ThemeOverride,
 } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -242,6 +243,22 @@ function parseLabel(tokens: Token[], lineNumber: number): Component {
 }
 
 /**
+ * icon "<name>" <position> <timing> [color]
+ * Mirrors `label`. The icon name is a quoted string OR a bare keyword; an
+ * optional trailing token overrides the colour.
+ */
+function parseIcon(tokens: Token[], lineNumber: number): Component {
+  const nameTok = tokens[0];
+  if (!nameTok) throw new ParseError("Expected icon name", lineNumber);
+  const name = nameTok.kind === "string" ? nameTok.value : tokenValue(nameTok);
+  const position = asPosition(expectKeyword(tokens[1], lineNumber, "position"));
+  const [timing, next] = extractTiming(tokens, 2, lineNumber);
+  const colorTok = tokens[next];
+  const color = colorTok ? tokenValue(colorTok) : undefined;
+  return { type: "icon", name, position, timing, ...(color !== undefined && { color }) };
+}
+
+/**
  * triptych <timing> <reveal>
  *   … children (raw tokens preserved) …
  */
@@ -272,13 +289,24 @@ function parseStepSequence(
   const [timing] = extractTiming(tokens, 0, lineNumber);
 
   const steps: StepSequenceItem[] = [];
-  // Children are paired: label + description may be on the same line
+  // Children are paired: label + description may be on the same line. An OPTIONAL
+  // leading BARE keyword (not a quoted string) is taken as an icon name, e.g.
+  //   rocket "1. Launch" "desc"
+  // Existing steps start with a quoted string, so they are unaffected.
   for (const child of children) {
     const ct = child.tokens;
     if (ct.length === 0) continue;
-    const label = ct[0].kind === "string" ? ct[0].value : tokenValue(ct[0]);
-    const description = ct[1] && ct[1].kind === "string" ? ct[1].value : "";
-    steps.push({ label, description });
+    let idx = 0;
+    let icon: string | undefined;
+    if (ct[0].kind !== "string") {
+      icon = tokenValue(ct[0]);
+      idx = 1;
+    }
+    const labelTok = ct[idx];
+    if (!labelTok) continue;
+    const label = labelTok.kind === "string" ? labelTok.value : tokenValue(labelTok);
+    const description = ct[idx + 1] && ct[idx + 1].kind === "string" ? (ct[idx + 1].value as string) : "";
+    steps.push({ label, description, ...(icon !== undefined && { icon }) });
   }
 
   return { type: "step-sequence", timing, steps };
@@ -350,6 +378,10 @@ function parseCard(
       case "arrow": {
         const direction = ct[1] ? tokenValue(ct[1]) : undefined;
         return { type: "arrow", ...(direction && { direction }) } as CardChild;
+      }
+      case "icon": {
+        const name = ct[1] ? (ct[1].kind === "string" ? ct[1].value as string : tokenValue(ct[1])) : "";
+        return { type: "icon", name } as CardChild;
       }
       case "result": {
         const content = ct[1] ? (ct[1].kind === "string" ? ct[1].value as string : tokenValue(ct[1])) : "";
@@ -651,6 +683,36 @@ function parseInlineValue(raw: string): unknown {
 }
 
 /**
+ * Lift a triple-quoted `"""` fenced block out of a component's children,
+ * returning its dedented RAW text plus the children that lie outside it.
+ * A fence is a line whose trimmed content is exactly `"""`. Content lines are
+ * dedented by the opening fence's indent so relative nesting is preserved.
+ * If no (closed) block is present, returns the children unchanged.
+ */
+function extractTripleQuotedBlock(
+  children: TokenizedLine[]
+): { rawBlock?: string; remaining: TokenizedLine[] } {
+  let start = -1;
+  for (let i = 0; i < children.length; i++) {
+    if (children[i].raw.trim() === '"""') { start = i; break; }
+  }
+  if (start === -1) return { remaining: children };
+  let end = -1;
+  for (let j = start + 1; j < children.length; j++) {
+    if (children[j].raw.trim() === '"""') { end = j; break; }
+  }
+  if (end === -1) return { remaining: children }; // unterminated → leave as-is
+  const fenceIndent = children[start].indent;
+  const rawBlock = children
+    .slice(start + 1, end)
+    .map((l) => l.raw.slice(fenceIndent).replace(/\s+$/, ""))
+    .join("\n")
+    .replace(/^\n+|\n+$/g, "");
+  const remaining = [...children.slice(0, start), ...children.slice(end + 1)];
+  return { rawBlock, remaining };
+}
+
+/**
  * viz <timing> <reveal>
  *   type: <vizType>
  *   <key>: <value>
@@ -670,8 +732,16 @@ function parseViz(
   let vizType: VizType | undefined;
   const props: Record<string, unknown> = {};
 
-  if (children.length > 0) {
-    const structured = parseStructuredChildren(children, children[0].indent);
+  // Level-3 escape hatch: a triple-quoted `"""` block holds RAW author content
+  // (e.g. inline SVG for `type: custom`). Its lines are not key:value/token
+  // data, so we lift them out verbatim BEFORE structured parsing and stash the
+  // dedented text as `props.svg`. What remains (e.g. `type: custom`) is parsed
+  // normally. Without this the tokenizer shreds the SVG into junk `_lineN` keys.
+  const { rawBlock, remaining } = extractTripleQuotedBlock(children);
+  if (rawBlock !== undefined) props.svg = rawBlock;
+
+  if (remaining.length > 0) {
+    const structured = parseStructuredChildren(remaining, remaining[0].indent);
     if (typeof structured === "object" && structured !== null && !Array.isArray(structured)) {
       for (const [k, v] of Object.entries(structured as Record<string, unknown>)) {
         if (k === "type") {
@@ -812,6 +882,9 @@ function parseComponents(lines: TokenizedLine[]): Component[] {
         case "label":
           components.push(parseLabel(rest, line.lineNumber));
           break;
+        case "icon":
+          components.push(parseIcon(rest, line.lineNumber));
+          break;
         case "byline":
           components.push(parseByline(rest, line.lineNumber));
           break;
@@ -887,6 +960,11 @@ function parseVDSL(input: string): VDSLSpec {
   let theme = "";
   let canvas: VDSLSpec["canvas"] = { width: 1920, height: 1080 };
   const scenes: Scene[] = [];
+  let themeOverride: ThemeOverride | undefined;
+
+  // Allowed inline-override keys (kept small on purpose — VDSL's edge is brevity).
+  const PALETTE_KEYS = ["bg", "bg2", "ink", "inkSoft", "inkFaint", "grid", "green", "red", "amber", "purple"];
+  const FONT_KEYS = ["display", "body", "mono"];
 
   while (!cursor.isEOF()) {
     cursor.skipBlankAndComments();
@@ -921,6 +999,32 @@ function parseVDSL(input: string): VDSLSpec {
       continue;
     }
 
+    if (kw === "palette") {
+      const rest = line.raw.trim().replace(/^palette\s*/, "");
+      const props = parseInlineProperties(rest);
+      const colors: Record<string, string> = {};
+      for (const k of PALETTE_KEYS) if (props[k] !== undefined) colors[k] = String(props[k]);
+      if (Object.keys(colors).length) {
+        themeOverride = themeOverride || {};
+        themeOverride.colors = { ...(themeOverride.colors || {}), ...colors } as any;
+      }
+      cursor.advance();
+      continue;
+    }
+
+    if (kw === "font") {
+      const rest = line.raw.trim().replace(/^font\s*/, "");
+      const props = parseInlineProperties(rest);
+      const fonts: Record<string, string> = {};
+      for (const k of FONT_KEYS) if (props[k] !== undefined) fonts[k] = String(props[k]);
+      if (Object.keys(fonts).length) {
+        themeOverride = themeOverride || {};
+        themeOverride.fonts = { ...(themeOverride.fonts || {}), ...fonts } as any;
+      }
+      cursor.advance();
+      continue;
+    }
+
     if (kw === "scene") {
       // Hand off to scene parser (which calls cursor.advance() internally)
       scenes.push(parseScene(cursor));
@@ -931,7 +1035,7 @@ function parseVDSL(input: string): VDSLSpec {
     cursor.advance();
   }
 
-  return { version: versionNum, theme, canvas, scenes };
+  return { version: versionNum, theme, canvas, scenes, ...(themeOverride && { themeOverride }) };
 }
 
 export default parseVDSL;
