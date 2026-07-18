@@ -1,6 +1,6 @@
 # A2TL-Video Format Specification (VDSL/1)
 
-A2TL-Video (formerly VDSL) -- compact format for AI agents to describe explainer videos using ~95% fewer tokens than generating Remotion/HTML directly. Part of the A2TL family alongside a2tl-web.
+A2TL-Video (formerly VDSL) -- compact format for AI agents to describe explainer videos. 48–66% fewer tokens than Remotion JSX, 94–98% fewer than equivalent HTML (measured with tiktoken). Part of the A2TL family alongside a2tl-web.
 
 Format version identifier: `VDSL/1` (first line of every `.vdsl` file).
 
@@ -251,18 +251,27 @@ Atributos: `src` (URL de un .html generado), `srcdoc` (HTML del reproductor inli
 
 Dentro del frame, `window.vdslPlayer` expone: `play()`, `pause()`, `seek(frame)`, `seekTime(segundos)`, y los getters `frame`, `fps`, `totalFrames`. Desde el componente se accede vía el getter `.player` del elemento.
 
-## Medición estimada
+## Medición real (tiktoken, cl100k_base)
 
-| Formato | Tokens | Ratio | Ahorro |
-|---------|--------|-------|--------|
-| HyperFrames (9 HTML) | ~8,000 | 100% | — |
-| Remotion JSX directo | ~1,800 | 22% | 78% |
-| **VDSL (Level 2 puro)** | **~200** | **2.5%** | **97%** |
-| **VDSL (Level 2 + viz)** | **~400** | **5%** | **95%** |
+Vídeo de 74s, 7 escenas (communication.vdsl):
+
+| Formato | Tokens | Líneas | Ahorro vs HTML |
+|---------|--------|--------|----------------|
+| HTML player equivalente | 21,305 | — | — |
+| Remotion JSX directo | 2,257 | 238 | 89% |
+| **A2TL-Video spec** | **1,173** | **98** | **94%** |
+
+Vídeo simple de 13s, 3 escenas (hello-world.vdsl):
+
+| Formato | Tokens | Líneas | Ahorro vs HTML |
+|---------|--------|--------|----------------|
+| HTML player equivalente | 10,968 | — | — |
+| Remotion JSX directo | 501 | 65 | 95% |
+| **A2TL-Video spec** | **168** | **18** | **98%** |
 
 ## Pipeline
 
 ```
-contenido.md → (agente, ~400 tokens) → video.vdsl → (parser) → JSON ─┬→ (renderer web) → HTML autocontenido (vdsl play)
-                                                                     └→ (compiler Remotion) → MP4 (vdsl render)
+contenido.md → (agente, 130–1,173 tokens) → video.vdsl → (parser) → JSON ─┬→ (renderer web) → HTML autocontenido (vdsl play)
+                                                                           └→ (compiler Remotion) → MP4 (vdsl render)
 ```
