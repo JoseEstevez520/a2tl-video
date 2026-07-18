@@ -1,17 +1,18 @@
 /**
- * VDSL MCP Server — WEB-FIRST.
+ * A2TL-Video MCP Server — WEB-FIRST.
  *
- * Exposes VDSL as an MCP (Model Context Protocol) stdio server so AI agents can
- * generate the INSTANT, EMBEDDABLE HTML web player directly. There is no MP4
- * here: the product is a single, self-contained HTML file that plays in the
- * browser (and drops into a page via `<vdsl-player>`).
+ * Exposes A2TL-Video as an MCP (Model Context Protocol) stdio server so AI
+ * agents can generate the INSTANT, EMBEDDABLE HTML web player directly. There
+ * is no MP4 here: the product is a single, self-contained HTML file that plays
+ * in the browser (and drops into a page via `<vdsl-player>`).
  *
  * Tools:
- *   render_player(spec, theme?, output?) — parse + render a VDSL spec to a
+ *   render_player(spec, theme?, output?) — parse + render a .vdsl spec to a
  *       self-contained HTML player; returns the HTML (and writes a .html file
  *       when `output` is given).
- *   list_components() — the VDSL components, viz types, reveals, transitions,
- *       positions, accents, fonts and theme names supported by THIS build.
+ *   list_components() — the A2TL-Video components, viz types, reveals,
+ *       transitions, positions, accents, fonts and theme names supported by
+ *       THIS build.
  *   list_icons() — the icon names usable in `icon "<name>"`.
  */
 
@@ -88,7 +89,7 @@ const FONTS = ["display", "display-italic", "body", "mono", "hero"];
 // ---------------------------------------------------------------------------
 
 export const server = new Server(
-  { name: "vdsl", version: "0.1.0" },
+  { name: "a2tl-video", version: "0.1.0" },
   { capabilities: { tools: {} } }
 );
 
@@ -97,13 +98,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "render_player",
       description:
-        "Parse a VDSL spec and render it to a self-contained, embeddable HTML web player " +
+        "Parse an A2TL-Video spec (.vdsl) and render it to a self-contained, embeddable HTML web player " +
         "(no MP4). Returns the HTML as text; if `output` is given, also writes the .html " +
         "file and returns its path. Embed the player anywhere via <vdsl-player>.",
       inputSchema: {
         type: "object" as const,
         properties: {
-          spec: { type: "string", description: "The VDSL spec text (VDSL/1 format)." },
+          spec: { type: "string", description: "The A2TL-Video spec text (VDSL/1 format)." },
           theme: {
             type: "string",
             description: `Optional theme override. One of: ${themeNames.join(", ")}.`,
@@ -119,7 +120,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "list_components",
       description:
-        "List everything the VDSL vocabulary supports in this build: components, viz types, " +
+        "List everything the A2TL-Video vocabulary supports in this build: components, viz types, " +
         "reveals, transitions, positions, accents, fonts and theme names.",
       inputSchema: { type: "object" as const, properties: {} },
     },
@@ -172,7 +173,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     case "list_components": {
       const lines: string[] = [];
-      lines.push("VDSL components:");
+      lines.push("A2TL-Video components:");
       for (const c of COMPONENTS) lines.push(`  - ${c.name}: ${c.note}`);
       lines.push("");
       lines.push(`viz types (viz block \`type:\`): ${VIZ_TYPES.join(", ")}`);
@@ -200,10 +201,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-/** Start the VDSL MCP server over stdio. Resolves once connected. */
+/** Start the A2TL-Video MCP server over stdio. Resolves once connected. */
 export async function startMcpServer(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // Log to stderr so it never corrupts the stdio JSON-RPC stream on stdout.
-  console.error("VDSL MCP server (web-first) running on stdio.");
+  console.error("A2TL-Video MCP server (web-first) running on stdio.");
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * VDSL CLI
+ * A2TL-Video CLI (bin: vdsl)
  *
  * Commands:
  *   vdsl compile <input.vdsl> [-o output.jsx]
@@ -96,7 +96,7 @@ function ok(msg: string): void {
 
 function cmdCompile(positional: string[], flags: Record<string, string | boolean>): void {
   const inputFile = positional[0];
-  if (!inputFile) die("Usage: vdsl compile <input.vdsl> [-o output.jsx]");
+  if (!inputFile) die("Usage: a2tl-video compile <input.vdsl> [-o output.jsx]");
 
   const source = readVDSL(inputFile);
   const spec = parseVDSL(source);
@@ -164,7 +164,7 @@ function updateRenderProject(
 
 function cmdRender(positional: string[], flags: Record<string, string | boolean>): void {
   const inputFile = positional[0];
-  if (!inputFile) die("Usage: vdsl render <input.vdsl> [-o output.mp4] [--theme <name>]");
+  if (!inputFile) die("Usage: a2tl-video render <input.vdsl> [-o output.mp4] [--theme <name>]");
 
   const source = readVDSL(inputFile);
   const spec = parseVDSL(source);
@@ -209,7 +209,7 @@ function cmdRender(positional: string[], flags: Record<string, string | boolean>
 
 function cmdPreview(positional: string[], flags: Record<string, string | boolean>): void {
   const inputFile = positional[0];
-  if (!inputFile) die("Usage: vdsl preview <input.vdsl> [--theme <name>]");
+  if (!inputFile) die("Usage: a2tl-video preview <input.vdsl> [--theme <name>]");
 
   const source = readVDSL(inputFile);
   const spec = parseVDSL(source);
@@ -241,7 +241,7 @@ function cmdPreview(positional: string[], flags: Record<string, string | boolean
 // ---------------------------------------------------------------------------
 
 function cmdThemes(): void {
-  console.log("\nAvailable VDSL themes:\n");
+  console.log("\nAvailable A2TL-Video themes:\n");
   for (const name of themeNames) {
     const theme = themes[name];
     const grid = theme.grid ? "  [grid]" : "";
@@ -256,19 +256,19 @@ function cmdThemes(): void {
 // Command: init
 // ---------------------------------------------------------------------------
 
-const TEMPLATE = (name: string): string => `// ${name}.vdsl — VDSL Video Description
+const TEMPLATE = (name: string): string => `// ${name}.vdsl — A2TL-Video spec
 VDSL/1
 theme cobalt-grid
 canvas 1920x1080
 
 scene "${name}" 5s cut
   text "Hello, World!" display center word-stagger 0-4s
-  byline "Made with VDSL" bottom-center 4-5s
+  byline "Made with A2TL-Video" bottom-center 4-5s
 `;
 
 function cmdInit(positional: string[]): void {
   const name = positional[0];
-  if (!name) die("Usage: vdsl init <name>");
+  if (!name) die("Usage: a2tl-video init <name>");
 
   const filename = name.endsWith(".vdsl") ? name : `${name}.vdsl`;
   const outPath = path.resolve(process.cwd(), filename);
@@ -291,7 +291,7 @@ function cmdInit(positional: string[]): void {
 
 function cmdPlay(positional: string[], flags: Record<string, string | boolean>): void {
   const inputFile = positional[0];
-  if (!inputFile) die("Usage: vdsl play <input.vdsl> [--theme <name>]");
+  if (!inputFile) die("Usage: a2tl-video play <input.vdsl> [--theme <name>]");
 
   const source = readVDSL(inputFile);
   const spec = parseVDSL(source);
@@ -324,7 +324,7 @@ function cmdMcp(): void {
 
 function cmdHelp(): void {
   console.log(`
-\x1b[1mVDSL\x1b[0m — Video Description Language
+\x1b[1mA2TL-Video\x1b[0m — Agent to Transformation Language for Video
 
 \x1b[1mUsage:\x1b[0m
   vdsl compile <input.vdsl> [-o output.jsx] [--theme <name>]

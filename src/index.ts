@@ -1,5 +1,5 @@
 /**
- * VDSL — Video Description Language
+ * A2TL-Video — Agent to Transformation Language for Video
  * Main package entry point.
  */
 

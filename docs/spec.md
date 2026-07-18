@@ -1,6 +1,8 @@
-# VDSL/1 — Video Description Language
+# A2TL-Video Format Specification (VDSL/1)
 
-Formato compacto para que una IA describa vídeos explicativos gastando ~95% menos tokens que generando Remotion/HTML directo.
+A2TL-Video (formerly VDSL) -- compact format for AI agents to describe explainer videos using ~95% fewer tokens than generating Remotion/HTML directly. Part of the A2TL family alongside a2tl-web.
+
+Format version identifier: `VDSL/1` (first line of every `.vdsl` file).
 
 ## Filosofía
 
@@ -213,7 +215,7 @@ palette bg:#0d0f1a ink:#ff4d6d
 font display:"Playfair Display"
 ```
 
-Un par de líneas en la cabecera reskin todo el vídeo. El conjunto de knobs es pequeño a propósito (la ventaja de VDSL es la brevedad):
+Un par de líneas en la cabecera reskin todo el vídeo. El conjunto de knobs es pequeño a propósito (la ventaja de A2TL-Video es la brevedad):
 
 - **claves palette**: `bg`, `bg2`, `ink`, `inkSoft`, `inkFaint`, `grid`, `green`, `red`, `amber`, `purple`
 - **claves font**: `display`, `body`, `mono`
@@ -222,7 +224,7 @@ Si defines `ink` solo, sus derivados (`inkSoft`, `inkFaint`, `grid`) se calculan
 
 ## Reproductor web y embebido
 
-No hace falta renderizar a MP4 para ver (o publicar) un vídeo VDSL. `vdsl play <archivo>` genera un **reproductor HTML autocontenido** que se reproduce al instante en el navegador — sin Remotion, sin paso de render, sin recursos externos.
+No hace falta renderizar a MP4 para ver (o publicar) un vídeo A2TL-Video. `vdsl play <archivo>` genera un **reproductor HTML autocontenido** que se reproduce al instante en el navegador — sin Remotion, sin paso de render, sin recursos externos.
 
 ```
 vdsl play video.vdsl            → video.html (un solo archivo, autocontenido)

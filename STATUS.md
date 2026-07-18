@@ -1,13 +1,13 @@
-# VDSL — Estado Actual y Direccion
+# A2TL-Video — Estado Actual y Direccion
 
 ## Que se ha construido
 
 - **Parser**: VDSL texto → JSON spec. Funcional. Soporta text, text-cycle, label, triptych, step-sequence, comparison, card, code, trace-log, viz blocks.
 - **Compiler**: JSON spec → Remotion JSX. Funcional. Genera codigo importable desde `vdsl/components`.
-- **CLI**: `init`, `compile`, `render`, `preview` (Remotion Studio), `play` (HTML).
+- **CLI** (`vdsl`): `init`, `compile`, `render`, `preview` (Remotion Studio), `play` (HTML).
 - **17 componentes Remotion**: GridCanvas, WordReveal, TextCycle, TypewriterText, FadeText, Label, Byline, Triptych, StepSequence, NodeGraph, FlowDiagram, BoundarySim, WorkspaceDiagram, Comparison, TraceLog, ProtocolCompare, FormulaCard.
 - **3 temas**: cobalt-grid, dark-tech, warm-editorial.
-- **Web renderer**: Genera HTML standalone con JS runtime para reproduccion instantanea en navegador.
+- **Web renderer**: Generates standalone HTML with JS runtime for instant browser playback.
 - **Render project**: Proyecto Remotion local para `vdsl render` (MP4 via Chromium).
 
 ## Problemas actuales
@@ -26,7 +26,7 @@
 
 El caso de uso real no es una CLI local. Es:
 
-> Un usuario entra en SkillNet → el sistema genera un video explicativo → se reproduce al instante en la pagina.
+> Un usuario entra en SkillNet → el sistema genera un video con A2TL-Video → se reproduce al instante en la pagina.
 
 Requisitos:
 - El video debe mostrarse DENTRO de un elemento de la pagina (no pantalla completa)
@@ -38,10 +38,10 @@ Requisitos:
 
 ```
 Backend (SkillNet):
-  Request del usuario → IA genera VDSL → Sirve JSON + HTML player
+  Request del usuario → IA genera .vdsl → Sirve JSON + HTML player
                                                 
 Frontend (SkillNet):
-  Renderiza VDSL en un <div class="vdsl-player"> 
+  Renders A2TL-Video in a <div class="vdsl-player"> 
   Reproduccion instantanea via Web APIs (canvas, Web Animations, MediaRecorder)
   Opcional: grabacion a MP4 en cliente via MediaRecorder
 ```

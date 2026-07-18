@@ -1,9 +1,13 @@
 /**
- * <vdsl-player> — drop-in Web Component to embed a VDSL video in any web page.
+ * <vdsl-player> — drop-in Web Component to embed an A2TL-Video in any web page.
  *
- * The VDSL player is a self-contained HTML document (produced by `vdsl play`
- * or `renderToHTML()`). This component hosts that document inside a responsive,
- * style-isolated <iframe>, so it can't leak CSS in or out of your page.
+ * The A2TL-Video player is a self-contained HTML document (produced by
+ * `vdsl play` or `renderToHTML()`). This component hosts that document inside
+ * a responsive, style-isolated <iframe>, so it can't leak CSS in or out of
+ * your page.
+ *
+ * Part of A2TL-Video (Agent to Transformation Language for Video).
+ * The <vdsl-player> tag name is kept for backwards compatibility.
  *
  * Usage:
  *   <script src="vdsl-player.js"></script>

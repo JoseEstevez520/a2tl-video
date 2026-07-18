@@ -1,16 +1,19 @@
 ---
-name: vdsl
-description: Generate animated explainer videos as an instant, embeddable HTML web player from a compact VDSL spec. Use when the user wants a video, animation, or motion graphic for docs, courses, landing pages, or presentations — anything that should play in the browser.
+name: a2tl-video
+description: Generate animated explainer videos as an instant, embeddable HTML web player from a compact A2TL-Video spec (.vdsl format). Use when the user wants a video, animation, or motion graphic for docs, courses, landing pages, or presentations — anything that should play in the browser. Part of the A2TL family (a2tl-web, a2tl-video).
 ---
 
-# VDSL — Video Description Language (web player)
+# A2TL-Video (web player)
 
 Use this skill to turn content into an animated explainer. You write a small
-`.vdsl` file (a compact, ~30–100 line spec) and VDSL renders it to a **single,
-self-contained HTML file** that plays instantly in any browser — auto-fitting
-stage, play/pause, and a scrub bar, all inline with no build step and no
-external assets. There is **no MP4 and no video-encoding step**: the deliverable
-is the web player, which also embeds directly into a page.
+`.vdsl` file (a compact, ~30-100 line spec) and A2TL-Video renders it to a
+**single, self-contained HTML file** that plays instantly in any browser --
+auto-fitting stage, play/pause, and a scrub bar, all inline with no build step
+and no external assets. There is **no MP4 and no video-encoding step**: the
+deliverable is the web player, which also embeds directly into a page.
+
+A2TL-Video is part of the **A2TL** (Agent to Transformation Language) family
+alongside **a2tl-web** (for web pages).
 
 ## When to use
 
@@ -23,9 +26,9 @@ is the web player, which also embeds directly into a page.
 1. Read the content the user wants to visualize.
 2. Write a `.vdsl` file (see the format below).
 3. Produce the player, either way:
-   - **CLI:** `npx vdsl play <file>.vdsl` → writes `<file>.html` next to it. Open it to play; it embeds anywhere.
+   - **CLI:** `npx vdsl play <file>.vdsl` -- writes `<file>.html` next to it. Open it to play; it embeds anywhere.
    - **MCP tool:** call `render_player` with `{ spec, theme?, output? }`. It returns the self-contained HTML (and writes a `.html` when you pass `output`).
-4. Iterate on the spec and re-render. Do **not** try to produce an MP4 — the product is the HTML web player.
+4. Iterate on the spec and re-render. Do **not** try to produce an MP4 -- the product is the HTML web player.
 
 Two more MCP tools help you stay accurate:
 - `list_components` — the components, viz types, reveals, transitions, positions, accents, fonts, and theme names this build supports.
@@ -53,7 +56,7 @@ scene "<title>" <duration>s <transition>
 - **Timing** is `start-end` in seconds (`0-3s`, `1.5-4s`) or an open `1.5s`
   (from that time to the end of the scene). Timings are scene-relative.
 
-## Components (accurate to this build)
+## Components (accurate to this build of A2TL-Video)
 
 ### Text & labels
 - `text "<content>" <font> <position> <reveal> <timing>` — headline or body copy.
@@ -150,7 +153,7 @@ scene "Why" 5s crossfade
 
 scene "Close" 3s crossfade
   text "Describe it. Play it." display center fade 0-3s
-  byline "made with VDSL" bottom-right 1-3s
+  byline "made with A2TL-Video" bottom-right 1-3s
 ```
 
 ## Embedding the player
@@ -171,9 +174,9 @@ exposes `window.vdslPlayer` (`play()`, `pause()`, `seek(frame)`,
 
 ## Tips
 
-- Keep scenes ~3–8s. Roughly ~30 lines of VDSL ≈ ~15s of playback; scale from there.
+- Keep scenes ~3-8s. Roughly ~30 lines of .vdsl ≈ ~15s of playback; scale from there.
 - Composite blocks (triptych, step-sequence, card, trace-log, viz) build their
   parts progressively — author them as a small set of clear beats, not a wall.
 - Use `crossfade` / `blur-crossfade` between scenes for a smooth flow; `cut` for a snap.
 - One idea per scene; let text reveals (`word-stagger`, `typewriter`) pace the reading.
-- Always deliver the HTML player — never attempt an MP4 render.
+- Always deliver the HTML player -- never attempt an MP4 render.

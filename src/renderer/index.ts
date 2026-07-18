@@ -186,13 +186,18 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
   }
 
   // Blend two scene LAYERS (never individual elements). t is 0..1 across window.
+  // Canonical VDSL transition names (fade, dissolve, slide, zoom) are mapped to
+  // the concrete visual behaviour so both the spec names and the long-form names
+  // work identically.
   function applyTransition(out, inc, type, t) {
     var e = smoothstep(clamp01(t));
     out.style.filter = ''; inc.style.filter = '';
     out.style.transform = ''; inc.style.transform = '';
     inc.style.zIndex = '2'; out.style.zIndex = '1';
     switch (type) {
+      case 'fade':        // canonical VDSL name
       case 'crossfade':
+      case 'dissolve':    // canonical VDSL name — same visual as crossfade
         out.style.opacity = String(1 - e);
         inc.style.opacity = String(e);
         // Breathe: the incoming scene eases up from a whisper of scale so the
@@ -209,7 +214,8 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
         inc.style.transform = 'scale(' + (0.994 + 0.006 * e) + ')';
         break;
       }
-      case 'push-left': // content pushes left: incoming from right, outgoing off left
+      case 'slide':       // canonical VDSL name — default direction is push-left
+      case 'push-left':   // content pushes left: incoming from right, outgoing off left
         out.style.opacity = '1'; inc.style.opacity = '1';
         out.style.transform = 'translateX(' + (-100 * e) + '%)';
         inc.style.transform = 'translateX(' + (100 * (1 - e)) + '%)';
@@ -224,6 +230,7 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
         out.style.transform = 'translateY(' + (-100 * e) + '%)';
         inc.style.transform = 'translateY(' + (100 * (1 - e)) + '%)';
         break;
+      case 'zoom':        // canonical VDSL name
       case 'zoom-through':
         out.style.opacity = String(1 - e);
         inc.style.opacity = String(e);
@@ -257,8 +264,11 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
         sceneLayers[i].style.display = (i === outIdx || i === inIdx) ? 'block' : 'none';
       }
       applyTransition(sceneLayers[outIdx], sceneLayers[inIdx], ttype, tprog);
-      applyElementTiming(sceneLayers[outIdx], frame - sceneStarts[outIdx]);
-      applyElementTiming(sceneLayers[inIdx], frame - sceneStarts[inIdx]);
+      // During a transition the LEAD is ALWAYS applied: the scene-level opacity
+      // from applyTransition masks the early entrance so elements are "ready"
+      // when the incoming scene is fully visible.
+      applyElementTiming(sceneLayers[outIdx], frame - sceneStarts[outIdx], true);
+      applyElementTiming(sceneLayers[inIdx], frame - sceneStarts[inIdx], true);
       applyAmbient(sceneLayers[outIdx], frame);
       applyAmbient(sceneLayers[inIdx], frame);
       return;
@@ -271,7 +281,13 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
     const active = sceneLayers[si];
     if (!active) return;
     resetLayer(active);
-    applyElementTiming(active, frame - sceneStarts[si]);
+    // LEAD pre-advances the animation clock so elements appear "ready" when a
+    // transition reveals the scene.  When the scene has NO gradual incoming
+    // transition (scene 0, or any "cut") there is nothing to mask the early
+    // entrance, so we suppress LEAD to guarantee a full visible entrance
+    // animation from the first frame.
+    var useLead = si > 0 && scenes[si] && scenes[si].transition && scenes[si].transition !== 'cut';
+    applyElementTiming(active, frame - sceneStarts[si], useLead);
     applyAmbient(active, frame);
   }
 
@@ -312,7 +328,12 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
 
   // Drives per-element, SCENE-RELATIVE timing for a single layer. Extracted so
   // both the outgoing and incoming layers can animate during a transition.
-  function applyElementTiming(active, localFrame) {
+  // useLead: when true the dead-air LEAD is applied (elements pre-fade-in so
+  // they are "ready" when a transition reveals the scene). When false (scene 0
+  // or any "cut" transition, nothing masks the early entrance) LEAD is
+  // suppressed so elements get their full visible entrance animation.
+  function applyElementTiming(active, localFrame, useLead) {
+    var effectiveLead = useLead ? LEAD : 0;
     const els = active.querySelectorAll('[data-el]');
     for (let k = 0; k < els.length; k++) {
       const el = els[k];
@@ -358,7 +379,7 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
       // outgoing, and shows already SETTLED (its entrance reveal is suppressed
       // only at THIS replacement seam) so it is at full opacity the instant it
       // appears — a crisp cut, never a fade-in that dips toward blank.
-      const leadN = isPred ? 0 : LEAD;
+      const leadN = isPred ? 0 : effectiveLead;
       const visStart = startFrame - leadN;
       // A predecessor stays FULL until its successor's cue and then vanishes on
       // that exact frame (visEnd = succFrame). Otherwise the classic dead-air
@@ -379,7 +400,7 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
       const hasStg = !!(el.querySelector && el.querySelector('.stg'));
       const animFrame = isPred
         ? (hasStg ? (localFrame - startFrame) : SETTLED)
-        : (localFrame - startFrame + LEAD);
+        : (localFrame - startFrame + effectiveLead);
 
       if (localFrame >= visStart && localFrame < visEnd) {
         // NOTE: never touch el.style.display here — it holds the flex layout
@@ -413,7 +434,17 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
           el.style.opacity = exitMul;
           el.style.transform = '';
           const chars = Math.floor(Math.max(0, animFrame) / 2);
-          el.style.setProperty('--chars', String(chars));
+          // Reveal text character-by-character (seek-safe: pure f(frame)).
+          var twSpan = el.querySelector('.tw-text');
+          if (twSpan) {
+            var full = twSpan.getAttribute('data-fulltext') || '';
+            twSpan.textContent = full.slice(0, chars);
+          }
+          // Blink the cursor while typing, hide once done.
+          var twCur = el.querySelector('.tw-cursor');
+          if (twCur) {
+            twCur.style.opacity = chars >= (twSpan ? (twSpan.getAttribute('data-fulltext') || '').length : 0) ? '0' : String(0.5 + 0.3 * Math.sin(animFrame * 0.3));
+          }
         } else {
           // Composite blocks tag their children with .stg (+ data-stagger).
           // If present, the container stays visible and each child eases in on
@@ -519,23 +550,40 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
     }
   }
 
-  function tick() {
+  var lastTickTime = 0;
+  var frameDuration = 1000 / fps; // ms per frame (e.g. 33.3ms at 30fps)
+  var accumulator = 0;
+
+  function tick(now) {
     if (!playing) return;
-    currentFrame++;
-    if (currentFrame >= totalFrames) { currentFrame = 0; }
-    updateDisplay(currentFrame);
-    const t = currentFrame / fps;
-    document.getElementById('seekBar').value = (currentFrame / totalFrames) * 100;
-    const mins = Math.floor(t / 60);
-    const secs = Math.floor(t % 60);
-    document.getElementById('timeLabel').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+    if (lastTickTime === 0) lastTickTime = now;
+    var delta = now - lastTickTime;
+    lastTickTime = now;
+    // Cap delta to avoid spiral after tab switch / debugger pause
+    if (delta > 200) delta = frameDuration;
+    accumulator += delta;
+    var advanced = false;
+    while (accumulator >= frameDuration) {
+      accumulator -= frameDuration;
+      currentFrame++;
+      advanced = true;
+    }
+    if (advanced) {
+      if (currentFrame >= totalFrames) { currentFrame = 0; }
+      updateDisplay(currentFrame);
+      const t = currentFrame / fps;
+      document.getElementById('seekBar').value = (currentFrame / totalFrames) * 100;
+      const mins = Math.floor(t / 60);
+      const secs = Math.floor(t % 60);
+      document.getElementById('timeLabel').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+    }
     rafId = requestAnimationFrame(tick);
   }
 
   document.getElementById('playBtn').addEventListener('click', function() {
     playing = !playing;
     this.textContent = playing ? '⏸' : '▶';
-    if (playing) { if (currentFrame < 0) currentFrame = 0; rafId = requestAnimationFrame(tick); }
+    if (playing) { lastTickTime = 0; accumulator = 0; if (currentFrame < 0) currentFrame = 0; rafId = requestAnimationFrame(tick); }
     else { if (rafId) cancelAnimationFrame(rafId); }
   });
 
@@ -575,7 +623,7 @@ export function renderToHTML(spec: VDSLSpec, themeName?: string): string {
   window.vdslPlayer = {
     seek: doSeek,
     seekTime: function (sec) { doSeek(sec * fps); },
-    play: function () { if (!playing) { playing = true; document.getElementById('playBtn').textContent = '⏸'; if (currentFrame < 0) currentFrame = 0; rafId = requestAnimationFrame(tick); } },
+    play: function () { if (!playing) { playing = true; lastTickTime = 0; accumulator = 0; document.getElementById('playBtn').textContent = '⏸'; if (currentFrame < 0) currentFrame = 0; rafId = requestAnimationFrame(tick); } },
     pause: function () { playing = false; if (rafId) cancelAnimationFrame(rafId); document.getElementById('playBtn').textContent = '▶'; },
     get totalFrames() { return totalFrames; },
     get fps() { return fps; },
@@ -1041,7 +1089,7 @@ function renderText(comp: any, theme: Theme): string {
   if (reveal === "typewriter") {
     const chars = comp.content.length;
     return `<div class="vdsl-el" data-el="text" data-start="${comp.timing.start}" data-end="${comp.timing.end ?? ""}" data-reveal="typewriter" data-chars="${chars}" style="${pos};font-family:${font};font-size:${fontSize}px;font-weight:${fontWeight};color:${theme.colors.ink};letter-spacing:${tracking};overflow:hidden;white-space:pre-wrap;${italicStyle}">
-      <span style="display:inline">${escapeHtml(comp.content)}</span><span style="opacity:0.8">█</span>
+      <span class="tw-text" data-fulltext="${escapeHtml(comp.content)}" style="display:inline"></span><span class="tw-cursor" style="opacity:0.8">█</span>
     </div>`;
   }
 
@@ -1063,7 +1111,7 @@ function renderCode(comp: any, theme: Theme): string {
   const pos = posToStyle("center");
   // Box styling wraps the code in an inner element (not the inset:0 container),
   // so it reads as a compact code card floating over the grid.
-  return `<div class="vdsl-el" data-el="code" data-start="${comp.timing.start}" data-end="${comp.timing.end ?? ""}" data-reveal="typewriter" style="${pos}"><div style="font-family:${theme.fonts.mono};font-size:28px;color:${theme.colors.ink};background:${theme.colors.bg2};padding:20px 28px;border-radius:12px;border:1px solid ${theme.colors.grid};box-shadow:0 16px 44px rgba(0,0,0,0.14);white-space:pre;"><span>${escapeHtml(comp.content)}</span><span style="opacity:0.8">█</span></div></div>`;
+  return `<div class="vdsl-el" data-el="code" data-start="${comp.timing.start}" data-end="${comp.timing.end ?? ""}" data-reveal="typewriter" style="${pos}"><div style="font-family:${theme.fonts.mono};font-size:28px;color:${theme.colors.ink};background:${theme.colors.bg2};padding:20px 28px;border-radius:12px;border:1px solid ${theme.colors.grid};box-shadow:0 16px 44px rgba(0,0,0,0.14);white-space:pre;"><span class="tw-text" data-fulltext="${escapeHtml(comp.content)}"></span><span class="tw-cursor" style="opacity:0.8">█</span></div></div>`;
 }
 
 // --- Byline ---

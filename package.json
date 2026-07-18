@@ -1,25 +1,39 @@
 {
-  "name": "vdsl",
+  "name": "a2tl-video",
   "version": "0.1.0",
-  "description": "Video Description Language — describe videos, render beauty",
+  "description": "A2TL-Video — Agent to Transformation Language for video. Describe videos in a compact spec, play them instantly or render MP4s. Part of the A2TL family (a2tl-web, a2tl-video).",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./components": {
       "import": "./dist/components/index.js",
-      "require": "./dist/components/index.js"
+      "require": "./dist/components/index.js",
+      "types": "./dist/components/index.d.ts"
     },
     "./themes": {
       "import": "./dist/themes/index.js",
-      "require": "./dist/themes/index.js"
+      "require": "./dist/themes/index.js",
+      "types": "./dist/themes/index.d.ts"
     },
     "./parser": {
       "import": "./dist/parser/index.js",
-      "require": "./dist/parser/index.js"
+      "require": "./dist/parser/index.js",
+      "types": "./dist/parser/index.d.ts"
+    },
+    "./renderer": {
+      "import": "./dist/renderer/index.js",
+      "require": "./dist/renderer/index.js",
+      "types": "./dist/renderer/index.d.ts"
+    },
+    "./react": {
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.js",
+      "types": "./dist/react/index.d.ts"
     }
   },
   "bin": {
@@ -44,6 +58,7 @@
   "type": "commonjs",
   "keywords": [
     "video",
+    "a2tl",
     "dsl",
     "remotion",
     "explainer",
@@ -53,12 +68,12 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JoseEstevez520/vdsl.git"
+    "url": "git+https://github.com/JoseEstevez520/a2tl-video.git"
   },
   "bugs": {
-    "url": "https://github.com/JoseEstevez520/vdsl/issues"
+    "url": "https://github.com/JoseEstevez520/a2tl-video/issues"
   },
-  "homepage": "https://github.com/JoseEstevez520/vdsl#readme",
+  "homepage": "https://github.com/JoseEstevez520/a2tl-video#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "lucide-static": "^1.25.0",

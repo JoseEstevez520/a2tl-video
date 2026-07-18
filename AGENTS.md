@@ -1,4 +1,4 @@
-# VDSL — Video Description Language
+# A2TL-Video — Agent to Transformation Language for Video
 
 ## Stack
 
@@ -8,9 +8,9 @@ TypeScript, Node.js, Remotion 4, React 19, HTML/CSS/JS.
 
 ```
 src/
-  cli.ts              — CLI: init, compile, render, preview, play
+  cli.ts              — CLI (bin: vdsl): init, compile, render, preview, play
   index.ts            — Entry point, exports public API
-  parser/             — VDSL texto → JSON spec
+  parser/             — .vdsl text → JSON spec
     types.ts          — Interfaces (VDSLSpec, Scene, Component, etc.)
     tokenizer.ts      — Tokenizador linea a linea
     index.ts          — Parser principal + structured viz parser
@@ -35,7 +35,7 @@ STATUS.md             — Estado actual, problemas, vision
 
 ```
 .vdsl → parser → JSON spec → compiler → Remotion JSX → remotion render → MP4
-                             → web renderer → HTML (reproduccion instantanea)
+                             → web renderer → HTML (instant playback)
 ```
 
 ## Estado actual
@@ -65,7 +65,7 @@ Para SkillNet: usuario pide video → backend genera VDSL (IA) → frontend repr
 
 ## Notas
 
-- No personalizar para SkillNet (VDSL es generico)
+- No personalizar para SkillNet (A2TL-Video es generico)
 - No audio/TTS por ahora
 - No MCP server
 - Funcional > bonito en esta fase
