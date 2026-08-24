@@ -12,6 +12,13 @@
 
 A2TL-Video turns a compact VDSL/1 description into an animated explainer, diagram, or product video. The language carries the story and visual intent; the runtime supplies layout, motion, transitions, and themes.
 
+## Related work
+
+A2TL-Video belongs to the same research family as [SkillNet](https://github.com/ANFAIA/SkillNet):
+agents describe an artifact and a renderer owns the implementation details. SkillNet's current
+learning interface uses [OpenUI](https://github.com/openai/openui); A2TL-Video is the audiovisual
+counterpart, not a SkillNet runtime dependency.
+
 The [19-second introduction](assets/a2tl-video-intro.mp4) in this repository was written in [VDSL](examples/a2tl-video-intro.vdsl) and made with A2TL-Video itself.
 
 ## A small video specification
@@ -60,3 +67,4 @@ For browser playback, use the generated HTML directly or load `embed/vdsl-player
 - [Agent skill](skill/SKILL.md)
 - [Current status and known limitations](STATUS.md)
 - [A2TL-Web](https://github.com/JoseEstevez520/a2tl-web), for interfaces rather than video
+- [SkillNet](https://github.com/ANFAIA/SkillNet), the learning system where the wider GenUI research is applied
